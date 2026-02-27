@@ -1,142 +1,124 @@
-# Mission Control Redesign Plan
+# Mission Control v4 — Redesign Spec
 
-## Goal
-Rebuild UI toward ClawDash Pro style — polished, professional dashboard feel. Keep all Convex backend unchanged.
+## Design Language
+Dark navy UI kit: deep backgrounds, teal (#00E5C8) + purple (#7B61FF) accents, glow effects, teal→purple gradients, pill shapes, JetBrains Mono for numbers.
 
-## Current Problems
-- Sub-agent did a sloppy first pass — needs proper thought
-- Mobile nav was broken (too many tabs)
-- Layout changes were superficial — didn't actually improve the UX
+## Color Palette
 
-## Reference
-- ClawDash Pro demo: https://mission.clawdash.pro/
-- Key patterns to adopt: card-based KPI row, activity feed, status indicators, clean sidebar
+### Backgrounds
+- Page: `#141929`
+- Card: `#1B2036`
+- Card elevated: `#242B45`
+- Input/field: `#2A3150`
+- Sidebar/drawer: `#0F1320`
+
+### Accents
+- Primary teal: `#00E5C8` (actions, active, progress, links)
+- Teal glow: `#5EFCE8`
+- Secondary purple: `#7B61FF` (selected pills, gradients)
+- Gradient: `linear-gradient(135deg, #00E5C8, #7B61FF)`
+
+### Text
+- Primary: `#FFFFFF`
+- Secondary: `#A0A8C8`
+- Muted: `#555E7E`
+- Highlight: `#00E5C8`
+
+### Semantic
+- Positive: `#00E5C8`
+- Negative: `#FF6B6B`
+- Warning: `#FFB84D`
+- Border: `#2E3650`
+
+### Properties
+- Card radius: 14px
+- Pill radius: 20px
+- Button radius: 8px
+- Progress: 6px height, 6px radius
+- Card shadow: `0 4px 20px rgba(0,0,0,0.3)`
+- Active glow: `0 0 12px rgba(0, 229, 200, 0.3)`
 
 ---
 
-## Phase 1: Design System Upgrade
-
-### Install shadcn/ui properly
-- `npx shadcn-ui@latest init` with our existing tailwind config
-- Use their Card, Badge, Button, Tabs, Separator, ScrollArea components
-- Replace our hand-rolled card/badge/pill CSS with shadcn equivalents
-- Keep our color palette (--bg, --card, --green, etc.) but map to shadcn CSS variables
-
-### Typography
-- Keep JetBrains Mono for numbers
-- Use Inter for body text (add via next/font, not Google Fonts link)
-- Tighten the type scale — current sizes are good
-
-### Icons
-- Add lucide-react (comes with shadcn)
-- Replace emoji nav icons with proper SVG icons
-- Keep emoji for domain-specific content (🌿 ziolo, 🐟 fish days, etc.)
-
----
-
-## Phase 2: Layout
-
-### Desktop (≥768px)
-- Fixed sidebar: 220px, dark (var(--bg-subtle)), border-right
-- Sidebar: logo/title at top, nav links with lucide icons, active state with accent bg
-- Main content: fluid width, max 1000px, centered with padding
-- No top header bar (sidebar handles identity)
+## Navigation — Option D: Drawer
 
 ### Mobile (<768px)
-- No sidebar
-- Bottom nav: 4 tabs max (Home, Health, Trading, More)
-- "More" opens a slide-up sheet with remaining pages
-- Compact page headers
+- NO bottom nav bar
+- Hamburger (☰) icon fixed top-left (or in top header bar)
+- Tap → slide-out drawer from left (overlay + backdrop)
+- Drawer: full nav list with lucide icons, active state highlighted
+- Swipe-right from left edge also opens drawer
+- Close: tap backdrop, swipe left, or tap X
 
-### Shared
-- Consistent page padding: 24px horizontal, 32px top
-- Cards: 1px border, subtle hover, consistent radius (12px)
+### Desktop (≥768px)
+- Fixed sidebar (220px) — always visible
+- Same items as drawer
+- No hamburger
 
----
-
-## Phase 3: Dashboard Home (/)
-
-### KPI Row (top)
-4 cards in a row (2x2 on mobile):
-1. **HRV** — value + 7-day mini sparkline + trend arrow
-2. **Streak** — ziolo days clean + monthly budget fraction
-3. **Portfolio** — total equity + 1d % change colored
-4. **Level** — TES level + class name + XP bar
-
-### Activity Feed (main area)
-Single-column timeline, most recent first:
-- Cron job completions (green dot + job name + time ago)
-- Cron failures (red dot + job name + error snippet)
-- Recent trades (buy/sell pill + symbol + notional)
-- New reports (report icon + title + agent)
-- Source: merge cronJobs + recentTrades + reports, sort by timestamp
-
-### Right sidebar / below on mobile
-- **Today's Meals** — compact: kcal logged/planned + macro bars
-- **Positions** — list of active positions with side pills
-- **Quick Stats** — body battery, training readiness, sleep score
+### Nav Items (both drawer + sidebar)
+1. Dashboard (/) — LayoutDashboard
+2. Health (/health) — Heart
+3. Trading (/trading) — TrendingUp
+4. Meals (/meals) — UtensilsCrossed
+5. Progress (/progress) — Gamepad2
+6. Reports (/reports) — FileText
+7. Ops (/systems) — Settings
 
 ---
 
-## Phase 4: Individual Pages
+## Screens
 
-### Health (/health)
-- Keep metric grid (6 tiles) but use shadcn Cards
-- HRV + Sleep charts: consider recharts or keep custom bars but polish them
-- Ziolo section: keep as-is, it's good
+### 1. Home / Dashboard (/)
+- Top bar: hamburger (mobile) + "Mission Control" gradient text + date
+- KPI row: 4 stat cards (2x2 mobile, 4x1 desktop)
+  - HRV ms + color
+  - Ziolo streak days + month X/Y
+  - Portfolio equity + 1d%
+  - TES level + class
+- Vitals strip: BB · TR · RHR · Sleep — compact horizontal
+- Today's Meals card: kcal logged/planned + C/P/F bars → tap /meals
+- Active Positions card: position pills → tap /trading
+- Ziolo alert: conditional (streak <3d or over budget)
 
-### Trading (/trading)  
-- This page is already the best — equity curves, positions, trade log
-- Polish: use shadcn Tabs, consistent card styling
-- Keep LightweightChart component
+### 2. Health (/health)
+- Metric grid 3x2: HRV · RHR · Stress · BB · Steps · TR
+- HRV 14d bar chart
+- Sleep 14d bar chart
+- Ziolo detail: streak + monthly/yearly progress bars
 
-### Meals (/meals)
-- Keep the day-card expand pattern — it works well
-- Polish: shadcn Cards, cleaner macro bars
-- Weekly overview card: keep
+### 3. Trading (/trading)
+- Summary row 3 cards: equity · 1D P&L · positions
+- Strategy cards (tabbed Live/Paper): equity curve + positions + returns + risk
+- Trade log timeline
 
-### Progress (/progress)
-- Level ring: keep (looks good)
-- Domain bars: keep
-- Streaks + badges: keep
+### 4. Meals (/meals)
+- Weekly overview: avg macros plan vs actual
+- 7 day cards: expandable with logged + planned meals
 
-### Reports (/reports)
-- Agent filter pills: keep
-- Timeline grouping: keep
-- Expanded detail view: keep
+### 5. Progress (/progress)
+- Level ring with class
+- 6 domain bars
+- Streaks grid
+- Weed-free big number + budgets
+- Badges
 
-### Ops (/systems)
-- Cron job list with status dots: keep
-- Add: token usage section (new Convex table needed? or pull from OpenClaw API?)
-- Add: last sync timestamp per data source
+### 6. Reports (/reports)
+- Agent filter pills
+- Date-grouped timeline, tap to expand
 
----
-
-## Phase 5: New Features (post-polish)
-
-### Token Usage Tab (in Ops or separate)
-- Need to capture OpenClaw token usage data
-- Monthly spend chart
-- Per-model breakdown
-- Requires new Convex table + sync script
-
-### System Health
-- Cron pipeline health summary
-- Data freshness indicators per source (Garmin, TP, Strava)
-- Last successful sync times
+### 7. Ops (/systems)
+- Quick stats: jobs healthy X/Y, total crons
+- Last sync timestamp
+- Cron job list with status dots
 
 ---
 
 ## Implementation Order
-1. shadcn/ui setup + design system variables
-2. Sidebar + layout shell
-3. Bottom nav (4 tabs + More sheet)
-4. Dashboard home page (KPI + activity feed)
-5. Polish individual pages (headers, cards, spacing)
-6. Deploy + iterate
-
-## Rules
-- Every change must build clean before moving to next step
-- Mobile-first — test at 375px width
-- No breaking Convex queries — frontend only
-- Commit after each phase
+1. globals.css — new palette + component styles
+2. layout.tsx — remove BottomNav, add drawer trigger
+3. Sidebar.tsx → rewrite as desktop sidebar
+4. New: components/Drawer.tsx — mobile slide-out nav
+5. BottomNav.tsx — delete
+6. page.tsx — restyle dashboard with new design
+7. All other pages — compact headers, lucide icons
+8. Build + push

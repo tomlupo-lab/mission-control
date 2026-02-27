@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { TrendingUp } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -242,7 +243,7 @@ export default function TradingPage() {
 
   return (
     <div>
-      <div className="page-header-compact"><h1>📈 Trading</h1></div>
+      <div className="page-header-compact"><h1><TrendingUp size={20} style={{ color: "var(--accent)" }} /> Trading</h1></div>
 
       {/* Summary */}
       {strategies && (

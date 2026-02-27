@@ -1,32 +1,28 @@
-import type { Metadata, Viewport } from "next";
+"use client";
+
 import "./globals.css";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
-import BottomNav from "@/components/BottomNav";
 import Sidebar from "@/components/Sidebar";
+import Drawer from "@/components/Drawer";
 import Script from "next/script";
-
-export const metadata: Metadata = {
-  title: "Mission Control",
-  description: "Personal evolution dashboard",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Mission Control",
-  },
-};
-
-export const viewport: Viewport = {
-  themeColor: "#09090b",
-  width: "device-width",
-  initialScale: 1,
-};
+import { useState } from "react";
+import { Menu } from "lucide-react";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
   return (
     <html lang="en">
       <head>
+        <title>Mission Control</title>
+        <meta name="description" content="Personal evolution dashboard" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#141929" />
+        <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Mission Control" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -34,9 +30,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ConvexClientProvider>
           <Sidebar />
+          <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
           <div className="main-wrapper">
             <header className="top-header">
-              <span className="top-header-title">Mission Control</span>
+              <div className="top-header-left">
+                <button className="hamburger" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
+                  <Menu size={22} />
+                </button>
+                <span className="top-header-title">Mission Control</span>
+              </div>
               <span className="top-header-date" suppressHydrationWarning>
                 {new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
               </span>
@@ -45,7 +47,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
             </main>
           </div>
-          <BottomNav />
         </ConvexClientProvider>
         <Script id="sw-register" strategy="afterInteractive">{`
           if ('serviceWorker' in navigator) {

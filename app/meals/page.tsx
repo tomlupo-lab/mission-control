@@ -3,6 +3,7 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useState } from "react";
+import { UtensilsCrossed } from "lucide-react";
 
 const MEAL_EMOJI: Record<string, string> = {
   Breakfast: "🥣", Lunch: "🍽️", Dinner: "🥗", Snack: "🍎",
@@ -216,7 +217,7 @@ export default function MealsPage() {
 
   return (
     <div>
-      <div className="page-header-compact"><h1>🍽️ Meals</h1></div>
+      <div className="page-header-compact"><h1><UtensilsCrossed size={20} style={{ color: "var(--orange)" }} /> Meals</h1></div>
 
       {/* Weekly overview — plan vs actual */}
       <div className="card" style={{ marginBottom: 12 }}>

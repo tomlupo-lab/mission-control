@@ -2,6 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Settings } from "lucide-react";
 
 function formatDuration(ms?: number) {
   if (!ms) return "—";
@@ -37,7 +38,7 @@ export default function OpsPage() {
 
   return (
     <div>
-      <div className="page-header-compact"><h1>⚙️ Ops</h1></div>
+      <div className="page-header-compact"><h1><Settings size={20} style={{ color: "var(--accent)" }} /> Ops</h1></div>
 
       {/* Quick Stats */}
       <div className="grid-2" style={{ marginBottom: "var(--space-md)" }}>

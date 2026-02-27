@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { FileText } from "lucide-react";
 
 const AGENTS = [
   { id: "all", label: "All", icon: "📋" },
@@ -60,7 +61,7 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <div className="page-header-compact"><h1>📋 Reports</h1></div>
+      <div className="page-header-compact"><h1><FileText size={20} style={{ color: "var(--purple)" }} /> Reports</h1></div>
 
       {/* Agent filter pills */}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: "var(--space-lg)" }}>

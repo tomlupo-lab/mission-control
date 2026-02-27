@@ -2,6 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Gamepad2 } from "lucide-react";
 
 const DOMAIN_CONFIG: Record<string, { emoji: string; color: string }> = {
   Movement: { emoji: "🏃", color: "#ef4444" },
@@ -55,7 +56,7 @@ export default function ProgressPage() {
 
   return (
     <div>
-      <div className="page-header-compact"><h1>🎮 Progress</h1></div>
+      <div className="page-header-compact"><h1><Gamepad2 size={20} style={{ color: "var(--purple)" }} /> Progress</h1></div>
 
       <LevelRing
         level={tes?.level ?? 1}

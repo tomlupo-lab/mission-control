@@ -2,6 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Heart } from "lucide-react";
 
 function MetricTile({ label, value, unit, color }: { label: string; value: number | string | undefined; unit?: string; color?: string }) {
   return (
@@ -26,7 +27,7 @@ export default function HealthPage() {
 
   return (
     <div>
-      <div className="page-header-compact"><h1>❤️ Health</h1></div>
+      <div className="page-header-compact"><h1><Heart size={20} style={{ color: "var(--red)" }} /> Health</h1></div>
 
       {/* Today's metrics */}
       <div className="grid-3" style={{ marginBottom: "var(--space-md)" }}>
