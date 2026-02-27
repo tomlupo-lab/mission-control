@@ -7,8 +7,10 @@ import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import Script from "next/script";
 import { Menu } from "lucide-react";
 import NavLinks from "@/components/NavLinks";
+import { useState } from "react";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
   return (
     <html lang="en">
       <head>
@@ -32,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <header className="top-header">
               <div className="top-header-left">
                 {/* Mobile drawer */}
-                <Sheet>
+                <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
                   <SheetTrigger asChild>
                     <button className="hamburger" aria-label="Open menu">
                       <Menu size={22} />
@@ -44,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         <span style={{ fontSize: "1.2rem" }}>🚀</span>
                         <span className="gradient-text" style={{ fontWeight: 700, fontSize: "var(--text-base)" }}>Mission Control</span>
                       </div>
-                      <NavLinks />
+                      <NavLinks onNavigate={() => setDrawerOpen(false)} />
                     </div>
                   </SheetContent>
                 </Sheet>

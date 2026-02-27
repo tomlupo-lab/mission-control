@@ -14,14 +14,14 @@ const navItems = [
   { href: "/systems", label: "Ops", Icon: Settings },
 ];
 
-export default function NavLinks() {
+export default function NavLinks({ onNavigate }: { onNavigate?: () => void } = {}) {
   const pathname = usePathname();
   return (
     <nav className="sidebar-nav">
       {navItems.map((item) => {
         const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
         return (
-          <Link key={item.href} href={item.href} className={`sidebar-link${active ? " active" : ""}`}>
+          <Link key={item.href} href={item.href} className={`sidebar-link${active ? " active" : ""}`} onClick={onNavigate}>
             <span className="sidebar-icon"><item.Icon size={18} /></span>
             <span>{item.label}</span>
           </Link>
