@@ -113,12 +113,36 @@ Dark navy UI kit: deep backgrounds, teal (#00E5C8) + purple (#7B61FF) accents, g
 
 ---
 
+## Component Library: shadcn/ui + Recharts
+
+### shadcn/ui components to install:
+- Card (stat cards, info cards, all containers)
+- Button (actions, nav triggers)
+- Badge (pills, status indicators)
+- Sheet (mobile drawer nav!)
+- Tabs (trading Live/Paper, report filters)
+- Progress (health bars, macro bars, ziolo budgets)
+- DropdownMenu (filters, options)
+- Separator (section dividers)
+- Tooltip (metric explanations)
+- Toggle (future: settings)
+
+### Recharts for data viz:
+- AreaChart (equity curves — replace LightweightChart)
+- BarChart (HRV 14d, sleep 14d)
+- LineChart (trends)
+- ResponsiveContainer (auto-sizing)
+
+### Theme: wire navy/teal/purple palette into shadcn CSS variables
+Map our vars to shadcn's expected vars (--background, --card, --primary, --secondary, etc.)
+
 ## Implementation Order
-1. globals.css — new palette + component styles
-2. layout.tsx — remove BottomNav, add drawer trigger
-3. Sidebar.tsx → rewrite as desktop sidebar
-4. New: components/Drawer.tsx — mobile slide-out nav
-5. BottomNav.tsx — delete
-6. page.tsx — restyle dashboard with new design
-7. All other pages — compact headers, lucide icons
-8. Build + push
+1. Install shadcn/ui + recharts, configure tailwind + theme
+2. globals.css — new palette mapped to shadcn CSS vars
+3. layout.tsx — Sheet-based drawer nav (mobile), sidebar (desktop)
+4. Delete BottomNav.tsx, rewrite Sidebar.tsx
+5. Rebuild page.tsx dashboard with shadcn Card + Recharts
+6. Rebuild health page — Recharts BarChart for HRV/sleep
+7. Rebuild trading page — Recharts AreaChart for equity curves
+8. Restyle meals, progress, reports, ops with shadcn components
+9. Build + push to GitHub

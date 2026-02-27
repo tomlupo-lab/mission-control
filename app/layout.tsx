@@ -3,14 +3,12 @@
 import "./globals.css";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import Sidebar from "@/components/Sidebar";
-import Drawer from "@/components/Drawer";
+import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import Script from "next/script";
-import { useState } from "react";
 import { Menu } from "lucide-react";
+import NavLinks from "@/components/NavLinks";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
   return (
     <html lang="en">
       <head>
@@ -30,20 +28,33 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ConvexClientProvider>
           <Sidebar />
-          <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
           <div className="main-wrapper">
             <header className="top-header">
               <div className="top-header-left">
-                <button className="hamburger" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
-                  <Menu size={22} />
-                </button>
+                {/* Mobile drawer */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <button className="hamburger" aria-label="Open menu">
+                      <Menu size={22} />
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent side="left">
+                    <div style={{ padding: "var(--space-xl) 0" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", padding: "0 var(--space-lg)", marginBottom: "var(--space-xl)" }}>
+                        <span style={{ fontSize: "1.2rem" }}>🚀</span>
+                        <span className="gradient-text" style={{ fontWeight: 700, fontSize: "var(--text-base)" }}>Mission Control</span>
+                      </div>
+                      <NavLinks />
+                    </div>
+                  </SheetContent>
+                </Sheet>
                 <span className="top-header-title">Mission Control</span>
               </div>
               <span className="top-header-date" suppressHydrationWarning>
                 {new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
               </span>
             </header>
-            <main className="main-content">
+            <main>
               {children}
             </main>
           </div>

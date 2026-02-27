@@ -4,6 +4,8 @@ import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { FileText } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const AGENTS = [
   { id: "all", label: "All", icon: "📋" },
@@ -66,43 +68,45 @@ export default function ReportsPage() {
       {/* Agent filter pills */}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: "var(--space-lg)" }}>
         {AGENTS.map((a) => (
-          <button
+          <Badge
             key={a.id}
+            variant={agentFilter === a.id ? "live" : "default"}
             onClick={() => { setAgentFilter(a.id); setExpandedId(null); }}
-            className={agentFilter === a.id ? "pill pill-accent" : "pill pill-muted"}
-            style={{ cursor: "pointer", background: agentFilter === a.id ? "var(--accent-dim)" : undefined }}
+            style={{ cursor: "pointer" }}
           >
             {a.icon} {a.label}
-          </button>
+          </Badge>
         ))}
       </div>
 
       {/* Expanded detail */}
       {expandedId && detail && (
-        <div className="card-hero" style={{ marginBottom: "var(--space-lg)" }}>
-          <div className="flex-between">
-            <h2 style={{ fontSize: "var(--text-lg)", margin: 0, textTransform: "none", letterSpacing: 0 }}>{detail.title}</h2>
-            <button onClick={() => setExpandedId(null)} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: "1.1rem" }}>✕</button>
-          </div>
-          <div className="meta" style={{ marginBottom: "var(--space-sm)" }}>
-            {detail.agent} · {detail.reportType} · {detail.date}
-            {(detail.deliveredTo ?? []).map((ch: string) => (
-              <span key={ch} style={{ marginLeft: 6 }}>{DELIVERY_ICONS[ch] || "📤"}</span>
-            ))}
-          </div>
-          <div style={{ fontSize: "var(--text-base)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-            {detail.content}
-            {detail.contentOverflow && detail.contentOverflow}
-          </div>
-        </div>
+        <Card style={{ marginBottom: "var(--space-lg)", border: "1px solid var(--border-hex)", padding: "var(--space-xl)" }}>
+          <CardContent style={{ padding: 0 }}>
+            <div className="flex-between">
+              <h2 style={{ fontSize: "var(--text-lg)", margin: 0, textTransform: "none", letterSpacing: 0 }}>{detail.title}</h2>
+              <button onClick={() => setExpandedId(null)} style={{ background: "none", border: "none", color: "var(--muted-hex)", cursor: "pointer", fontSize: "1.1rem" }}>✕</button>
+            </div>
+            <div className="meta" style={{ marginBottom: "var(--space-sm)" }}>
+              {detail.agent} · {detail.reportType} · {detail.date}
+              {(detail.deliveredTo ?? []).map((ch: string) => (
+                <span key={ch} style={{ marginLeft: 6 }}>{DELIVERY_ICONS[ch] || "📤"}</span>
+              ))}
+            </div>
+            <div style={{ fontSize: "var(--text-base)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+              {detail.content}
+              {detail.contentOverflow && detail.contentOverflow}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Timeline */}
       {reports === undefined && <div className="shimmer" style={{ height: 200 }} />}
       {reports && Object.keys(grouped).length === 0 && (
-        <div className="card meta" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
+        <Card><CardContent className="meta" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
           No reports yet. They&apos;ll appear here once cron jobs generate report JSON files.
-        </div>
+        </CardContent></Card>
       )}
 
       {Object.entries(grouped).map(([dateLabel, items]) => (
@@ -111,22 +115,24 @@ export default function ReportsPage() {
           {items.map((r: any) => {
             const agentMeta = AGENTS.find((a) => a.id === r.agent);
             return (
-              <div key={r._id} className="card" onClick={() => setExpandedId(expandedId === r.reportId ? null : r.reportId)}
+              <Card key={r._id} onClick={() => setExpandedId(expandedId === r.reportId ? null : r.reportId)}
                 style={{ marginBottom: "var(--space-sm)", cursor: "pointer" }}>
-                <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: "1.2rem" }}>{agentMeta?.icon || "📄"}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: "var(--text-base)", fontWeight: 600 }}>{r.title}</div>
-                    <div className="meta" style={{ marginTop: 2 }}>{r.summary?.slice(0, 120)}</div>
-                    <div className="meta" style={{ marginTop: "var(--space-xs)" }}>
-                      {r.reportType}
-                      {(r.deliveredTo ?? []).map((ch: string) => (
-                        <span key={ch} style={{ marginLeft: 4 }}>{DELIVERY_ICONS[ch] || "📤"}</span>
-                      ))}
+                <CardContent style={{ padding: "var(--space-lg)" }}>
+                  <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "flex-start" }}>
+                    <span style={{ fontSize: "1.2rem" }}>{agentMeta?.icon || "📄"}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: "var(--text-base)", fontWeight: 600 }}>{r.title}</div>
+                      <div className="meta" style={{ marginTop: 2 }}>{r.summary?.slice(0, 120)}</div>
+                      <div className="meta" style={{ marginTop: "var(--space-xs)" }}>
+                        {r.reportType}
+                        {(r.deliveredTo ?? []).map((ch: string) => (
+                          <span key={ch} style={{ marginLeft: 4 }}>{DELIVERY_ICONS[ch] || "📤"}</span>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>

@@ -7,6 +7,7 @@ import { TrendingUp } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import LightweightChart from "@/components/LightweightChart";
 
 function formatPct(v: number | undefined | null): string {
@@ -18,7 +19,7 @@ function formatUsd(v: number | undefined | null): string {
   return `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 function pctColor(v: number | undefined | null): string {
-  if (v == null) return "var(--muted)";
+  if (v == null) return "var(--muted-hex)";
   return v >= 0 ? "var(--green)" : "var(--red)";
 }
 
@@ -41,19 +42,13 @@ function MiniSparkline({ data, width = 48, height = 16 }: { data: { date: string
 function DriftBar({ actualWt, drift, sideColor }: { actualWt: number; drift: number; sideColor: string }) {
   const absDrift = Math.abs(drift ?? 0);
   let barColor = sideColor;
-  let barOpacity = 0.7;
-  if (absDrift > 12) { barColor = "var(--red)"; barOpacity = 0.9; }
-  else if (absDrift > 7) { barColor = "var(--orange)"; barOpacity = 0.85; }
-  else if (absDrift > 3) { barColor = "var(--orange)"; barOpacity = 0.6; }
+  if (absDrift > 12) barColor = "var(--red)";
+  else if (absDrift > 7) barColor = "var(--orange)";
+  else if (absDrift > 3) barColor = "var(--orange)";
 
   return (
     <div>
-      <div className="progress-bar">
-        <div className="fill" style={{
-          width: `${Math.min(Math.abs(actualWt), 50) * 2}%`,
-          background: barColor, opacity: barOpacity,
-        }} />
-      </div>
+      <Progress value={Math.min(Math.abs(actualWt), 50) * 2} indicatorColor={barColor} />
       <div className="flex-between" style={{ marginTop: 2 }}>
         <span className="mono" style={{ fontSize: "var(--text-xs)", color: sideColor }}>{(actualWt ?? 0).toFixed(1)}%</span>
         {absDrift > 3 && (
@@ -119,9 +114,8 @@ function StrategyCard({ s }: { s: any }) {
             {positionsOpen && (
               <div className="flex-col gap-xs" style={{ marginTop: "var(--space-sm)" }}>
                 {positions.map((p: any) => {
-                  const sideColor = p.side === "short" ? "var(--red)" : p.side === "long" ? "var(--green)" : "var(--muted)";
+                  const sideColor = p.side === "short" ? "var(--red)" : p.side === "long" ? "var(--green)" : "var(--muted-hex)";
                   const pnlColor = (p.unrealizedPnl ?? 0) >= 0 ? "var(--green)" : "var(--red)";
-                  const pillCls = p.side === "short" ? "pill pill-red" : p.side === "long" ? "pill pill-green" : "pill pill-muted";
                   return (
                     <div key={p.symbol} style={{
                       display: "flex", alignItems: "center", gap: "var(--space-sm)",
@@ -129,7 +123,9 @@ function StrategyCard({ s }: { s: any }) {
                     }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)", width: 80, flexShrink: 0 }}>
                         <span style={{ fontWeight: 700, fontSize: "var(--text-base)" }}>{p.symbol}</span>
-                        <span className={pillCls} style={{ fontSize: "0.55rem", padding: "1px 4px" }}>{p.side?.toUpperCase() ?? "—"}</span>
+                        <Badge variant={p.side === "short" ? "destructive" : p.side === "long" ? "live" : "default"} style={{ fontSize: "0.55rem", padding: "1px 4px" }}>
+                          {p.side?.toUpperCase() ?? "—"}
+                        </Badge>
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <DriftBar actualWt={p.actualWt ?? 0} drift={p.drift ?? 0} sideColor={sideColor} />
@@ -184,7 +180,7 @@ function StrategyCard({ s }: { s: any }) {
 function TradeLogTimeline() {
   const trades = useQuery(api.trading.getRecentTrades, { limit: 30 });
   if (!trades || trades.length === 0) {
-    return <div className="card meta" style={{ textAlign: "center", padding: "var(--space-xl)", marginTop: "var(--space-lg)" }}>No trades recorded yet</div>;
+    return <Card><CardContent className="meta" style={{ textAlign: "center", padding: "var(--space-xl)" }}>No trades recorded yet</CardContent></Card>;
   }
 
   const grouped: Record<string, typeof trades> = {};
@@ -210,9 +206,9 @@ function TradeLogTimeline() {
                   padding: "var(--space-sm) var(--space-md)", background: "var(--card2)", borderRadius: "var(--radius-sm)",
                   borderLeft: `3px solid ${sideColor}`,
                 }}>
-                  <span className={isBuy ? "pill pill-green" : "pill pill-red"} style={{ width: 36, textAlign: "center", padding: "1px 0" }}>
+                  <Badge variant={isBuy ? "live" : "destructive"} style={{ width: 36, textAlign: "center", justifyContent: "center", padding: "1px 0" }}>
                     {t.side.toUpperCase()}
-                  </span>
+                  </Badge>
                   <span style={{ fontWeight: 700, fontSize: "var(--text-base)", width: 48 }}>{t.symbol}</span>
                   <div className="mono meta" style={{ flex: 1 }}>
                     {t.quantity.toFixed(t.quantity < 1 ? 5 : 2)} @ ${t.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -243,28 +239,34 @@ export default function TradingPage() {
 
   return (
     <div>
-      <div className="page-header-compact"><h1><TrendingUp size={20} style={{ color: "var(--accent)" }} /> Trading</h1></div>
+      <div className="page-header-compact"><h1><TrendingUp size={20} style={{ color: "var(--accent-hex)" }} /> Trading</h1></div>
 
       {/* Summary */}
       {strategies && (
         <div className="grid-3" style={{ marginBottom: "var(--space-lg)" }}>
-          <div className="stat-card">
-            <div className="value" style={{ color: "var(--green)" }}>{formatUsd(totalEquity)}</div>
-            <div className="label">Live Equity</div>
-            <div className="sub">{live.length} strategies</div>
-          </div>
-          <div className="stat-card">
-            <div className="value" style={{ color: pctColor(totalPnl1d) }}>
-              {totalPnl1d >= 0 ? "+" : ""}{formatUsd(totalPnl1d)}
-            </div>
-            <div className="label">1D P&L</div>
-            <div className="sub">combined</div>
-          </div>
-          <div className="stat-card">
-            <div className="value" style={{ color: "var(--accent)" }}>{totalPositions}</div>
-            <div className="label">Positions</div>
-            <div className="sub">live</div>
-          </div>
+          <Card>
+            <CardContent style={{ padding: "var(--space-md)", textAlign: "center" }}>
+              <div className="metric-value" style={{ fontSize: "1.6rem", color: "var(--green)" }}>{formatUsd(totalEquity)}</div>
+              <div className="label">Live Equity</div>
+              <div className="meta" style={{ fontSize: "var(--text-xs)" }}>{live.length} strategies</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent style={{ padding: "var(--space-md)", textAlign: "center" }}>
+              <div className="metric-value" style={{ fontSize: "1.6rem", color: pctColor(totalPnl1d) }}>
+                {totalPnl1d >= 0 ? "+" : ""}{formatUsd(totalPnl1d)}
+              </div>
+              <div className="label">1D P&L</div>
+              <div className="meta" style={{ fontSize: "var(--text-xs)" }}>combined</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent style={{ padding: "var(--space-md)", textAlign: "center" }}>
+              <div className="metric-value" style={{ fontSize: "1.6rem", color: "var(--accent-hex)" }}>{totalPositions}</div>
+              <div className="label">Positions</div>
+              <div className="meta" style={{ fontSize: "var(--text-xs)" }}>live</div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -272,7 +274,7 @@ export default function TradingPage() {
       <div>
         {!strategies && <div className="shimmer" style={{ height: 200 }} />}
         {strategies && strategies.length === 0 && (
-          <div className="card meta" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>No strategies synced yet</div>
+          <Card><CardContent className="meta" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>No strategies synced yet</CardContent></Card>
         )}
         {strategies && strategies.length > 0 && (
           <Tabs defaultValue="live">
@@ -288,12 +290,12 @@ export default function TradingPage() {
             </TabsList>
             <TabsContent value="live">
               {live.length === 0 ? (
-                <div className="card meta" style={{ textAlign: "center", padding: "var(--space-xl)" }}>No live strategies</div>
+                <Card><CardContent className="meta" style={{ textAlign: "center", padding: "var(--space-xl)" }}>No live strategies</CardContent></Card>
               ) : live.map((s) => <StrategyCard key={s.strategyId} s={s} />)}
             </TabsContent>
             <TabsContent value="paper">
               {paper.length === 0 ? (
-                <div className="card meta" style={{ textAlign: "center", padding: "var(--space-xl)" }}>No paper strategies</div>
+                <Card><CardContent className="meta" style={{ textAlign: "center", padding: "var(--space-xl)" }}>No paper strategies</CardContent></Card>
               ) : paper.map((s) => <StrategyCard key={s.strategyId} s={s} />)}
             </TabsContent>
           </Tabs>

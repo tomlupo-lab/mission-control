@@ -3,6 +3,9 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Gamepad2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 const DOMAIN_CONFIG: Record<string, { emoji: string; color: string }> = {
   Movement: { emoji: "🏃", color: "#ef4444" },
@@ -24,12 +27,12 @@ function LevelRing({ level, xp, totalXp, totalEvents, className }: {
     <div style={{ textAlign: "center", marginBottom: "var(--space-lg)" }}>
       <div className="level-ring">
         <svg viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border)" strokeWidth="8" />
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border-hex)" strokeWidth="8" />
           <circle cx="60" cy="60" r="52" fill="none" stroke="url(#lvlGrad)" strokeWidth="8"
             strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" />
           <defs>
             <linearGradient id="lvlGrad" x1="0%" y1="0%" x2="100%">
-              <stop offset="0%" stopColor="var(--accent)" />
+              <stop offset="0%" stopColor="var(--accent-hex)" />
               <stop offset="100%" stopColor="var(--cyan)" />
             </linearGradient>
           </defs>
@@ -67,73 +70,84 @@ export default function ProgressPage() {
       />
 
       {/* Domains */}
-      <div className="card" style={{ marginBottom: "var(--space-md)" }}>
-        <h2>⚔️ Domains</h2>
-        {Object.entries(domains).map(([name, d]: [string, any]) => {
-          const cfg = DOMAIN_CONFIG[name] || { emoji: "?", color: "#666" };
-          const pct = d.xp_to_next > 0 ? (d.xp_in_level / d.xp_to_next) * 100 : 100;
-          return (
-            <div key={name} className="domain-row">
-              <span className="domain-emoji">{cfg.emoji}</span>
-              <span className="domain-name">{name}</span>
-              <div className="domain-bar-bg">
-                <div className="domain-bar" style={{ width: `${pct}%`, background: cfg.color }} />
+      <Card style={{ marginBottom: "var(--space-md)" }}>
+        <CardHeader><CardTitle>⚔️ Domains</CardTitle></CardHeader>
+        <CardContent>
+          {Object.entries(domains).map(([name, d]: [string, any]) => {
+            const cfg = DOMAIN_CONFIG[name] || { emoji: "?", color: "#666" };
+            const pct = d.xp_to_next > 0 ? (d.xp_in_level / d.xp_to_next) * 100 : 100;
+            return (
+              <div key={name} className="domain-row">
+                <span className="domain-emoji">{cfg.emoji}</span>
+                <span className="domain-name">{name}</span>
+                <div style={{ flex: 1 }}>
+                  <Progress value={pct} indicatorColor={cfg.color} />
+                </div>
+                <span className="domain-level" style={{ color: cfg.color }}>L{d.level}</span>
+                <span className="domain-xp">{d.xp_in_level}/{d.xp_to_next}</span>
               </div>
-              <span className="domain-level" style={{ color: cfg.color }}>L{d.level}</span>
-              <span className="domain-xp">{d.xp_in_level}/{d.xp_to_next}</span>
-            </div>
-          );
-        })}
-        {Object.keys(domains).length === 0 && <div className="meta">No domain data yet</div>}
-      </div>
+            );
+          })}
+          {Object.keys(domains).length === 0 && <div className="meta">No domain data yet</div>}
+        </CardContent>
+      </Card>
 
       {/* Streaks */}
       {Object.keys(streaks).length > 0 && (
-        <div className="card" style={{ marginBottom: "var(--space-md)" }}>
-          <h2>🔥 Streaks</h2>
-          <div className="grid-2">
-            {Object.entries(streaks).map(([name, val]: [string, any]) => {
-              const days = typeof val === "number" ? val : val?.days ?? val?.current ?? 0;
-              return (
-                <div key={name} style={{ padding: "var(--space-sm) var(--space-md)", background: "var(--card2)", borderRadius: "var(--radius-sm)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="meta">{name}</span>
-                  <span className="metric-value" style={{ color: days >= 7 ? "var(--green)" : days >= 3 ? "var(--orange)" : "var(--muted)" }}>{days}d</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <Card style={{ marginBottom: "var(--space-md)" }}>
+          <CardHeader><CardTitle>🔥 Streaks</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid-2">
+              {Object.entries(streaks).map(([name, val]: [string, any]) => {
+                const days = typeof val === "number" ? val : val?.days ?? val?.current ?? 0;
+                return (
+                  <div key={name} style={{ padding: "var(--space-sm) var(--space-md)", background: "var(--card2)", borderRadius: "var(--radius-sm)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span className="meta">{name}</span>
+                    <span className="metric-value" style={{ color: days >= 7 ? "var(--green)" : days >= 3 ? "var(--orange)" : "var(--muted-hex)" }}>{days}d</span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Ziolo */}
-      <div className="card" style={{ marginBottom: "var(--space-md)" }}>
-        <h2>🌿 Weed-Free</h2>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-lg)" }}>
-          <div className="streak-big">{ziolo?.currentStreak ?? 0}d</div>
-          <div>
-            <div className="meta">Last use: {ziolo?.lastUseDate ?? "—"}</div>
-            <div className="meta" style={{ marginTop: 2 }}>
-              Month: {ziolo?.monthlyUseDays ?? 0}/{ziolo?.monthlyGoal ?? 8} · Year: {ziolo?.yearlyUseDays ?? 0}/{ziolo?.yearlyGoal ?? 96}
+      <Card style={{ marginBottom: "var(--space-md)" }}>
+        <CardHeader><CardTitle>🌿 Weed-Free</CardTitle></CardHeader>
+        <CardContent>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-lg)" }}>
+            <div className="streak-big">{ziolo?.currentStreak ?? 0}d</div>
+            <div>
+              <div className="meta">Last use: {ziolo?.lastUseDate ?? "—"}</div>
+              <div className="meta" style={{ marginTop: 2 }}>
+                Month: {ziolo?.monthlyUseDays ?? 0}/{ziolo?.monthlyGoal ?? 8} · Year: {ziolo?.yearlyUseDays ?? 0}/{ziolo?.yearlyGoal ?? 96}
+              </div>
+              <div style={{ marginTop: "var(--space-sm)" }}>
+                <Progress value={Math.min(100, ((ziolo?.monthlyUseDays ?? 0) / (ziolo?.monthlyGoal ?? 8)) * 100)} indicatorColor="var(--green)" />
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Badges */}
-      <div className="card" style={{ marginBottom: "var(--space-md)" }}>
-        <h2>🏆 Badges ({badges.length})</h2>
-        <div className="badge-list">
-          {badges.length > 0 ? (
-            [...badges].reverse().map((b: string, i: number) => {
-              let cls = "badge";
-              if (b.startsWith("Gold")) cls += " badge-gold";
-              else if (b.startsWith("Silver")) cls += " badge-silver";
-              else cls += " badge-bronze";
-              return <span key={i} className={cls}>{b}</span>;
-            })
-          ) : <div className="meta">No badges yet</div>}
-        </div>
-      </div>
+      <Card style={{ marginBottom: "var(--space-md)" }}>
+        <CardHeader><CardTitle>🏆 Badges ({badges.length})</CardTitle></CardHeader>
+        <CardContent>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {badges.length > 0 ? (
+              [...badges].reverse().map((b: string, i: number) => {
+                let variant: "default" | "live" | "paper" | "secondary" = "default";
+                if (b.startsWith("Gold")) variant = "live";
+                else if (b.startsWith("Silver")) variant = "default";
+                else variant = "paper";
+                return <Badge key={i} variant={variant}>{b}</Badge>;
+              })
+            ) : <div className="meta">No badges yet</div>}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
