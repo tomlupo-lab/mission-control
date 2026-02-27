@@ -325,3 +325,86 @@ body {
   stroke: var(--border-subtle);
 }
 .recharts-text { fill: var(--muted-hex) !important; font-size: 10px; }
+
+/* — Prose (markdown report rendering) — */
+.prose {
+  font-size: var(--text-base);
+  line-height: 1.7;
+  color: var(--text-secondary-hex, #A0A8C8);
+}
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  color: #FFFFFF;
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+.prose h1 { font-size: 1.4rem; }
+.prose h2 { font-size: 1.15rem; border-bottom: 1px solid var(--border-hex, #2E3650); padding-bottom: 0.3em; }
+.prose h3 { font-size: 1rem; }
+.prose h4 { font-size: 0.9rem; color: var(--accent-hex, #00E5C8); }
+.prose p { margin: 0.6em 0; }
+.prose strong { color: #FFFFFF; font-weight: 600; }
+.prose em { color: var(--accent-hex, #00E5C8); font-style: italic; }
+.prose a { color: var(--accent-hex, #00E5C8); text-decoration: underline; text-underline-offset: 2px; }
+.prose a:hover { color: #5EFCE8; }
+.prose ul, .prose ol { margin: 0.5em 0; padding-left: 1.5em; }
+.prose li { margin: 0.25em 0; }
+.prose li::marker { color: var(--accent-hex, #00E5C8); }
+.prose code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background: var(--card2-hex, #242B45);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #5EFCE8;
+}
+.prose pre {
+  background: var(--bg-hex, #141929);
+  border: 1px solid var(--border-hex, #2E3650);
+  border-radius: 8px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+.prose pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary-hex, #A0A8C8);
+}
+.prose blockquote {
+  border-left: 3px solid var(--accent-hex, #00E5C8);
+  padding-left: 12px;
+  margin: 0.8em 0;
+  color: var(--muted-hex, #555E7E);
+  font-style: italic;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.8em 0;
+  font-size: 0.8rem;
+}
+.prose th {
+  text-align: left;
+  padding: 8px 10px;
+  background: var(--card2-hex, #242B45);
+  color: #FFFFFF;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-hex, #2E3650);
+}
+.prose td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-hex, #2E3650);
+}
+.prose tr:hover td { background: rgba(0, 229, 200, 0.04); }
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--border-hex, #2E3650);
+  margin: 1.2em 0;
+}
+.prose img { max-width: 100%; border-radius: 8px; }
+.prose input[type="checkbox"] {
+  accent-color: var(--accent-hex, #00E5C8);
+  margin-right: 6px;
+}

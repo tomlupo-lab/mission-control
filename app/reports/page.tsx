@@ -6,6 +6,8 @@ import { api } from "@/convex/_generated/api";
 import { FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const AGENTS = [
   { id: "all", label: "All", icon: "📋" },
@@ -93,9 +95,10 @@ export default function ReportsPage() {
                 <span key={ch} style={{ marginLeft: 6 }}>{DELIVERY_ICONS[ch] || "📤"}</span>
               ))}
             </div>
-            <div style={{ fontSize: "var(--text-base)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-              {detail.content}
-              {detail.contentOverflow && detail.contentOverflow}
+            <div className="prose">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {(detail.content || "") + (detail.contentOverflow || "")}
+              </ReactMarkdown>
             </div>
           </CardContent>
         </Card>
