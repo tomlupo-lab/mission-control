@@ -4,6 +4,7 @@ import "./globals.css";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import Sidebar from "@/components/Sidebar";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
+import LiveDate from "@/components/LiveDate";
 import Script from "next/script";
 import { Menu } from "lucide-react";
 import NavLinks from "@/components/NavLinks";
@@ -53,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <span className="top-header-title">Mission Control</span>
               </div>
               <span className="top-header-date" suppressHydrationWarning>
-                {new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
+                <LiveDate />
               </span>
             </header>
             <main>
