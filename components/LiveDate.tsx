@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export default function LiveDate() {
-  const [dateStr, setDateStr] = useState("");
+  const [dateStr, setDateStr] = useState<string | null>(null);
 
   useEffect(() => {
     const update = () => {
@@ -17,10 +17,10 @@ export default function LiveDate() {
       );
     };
     update();
-    // Update every minute
     const interval = setInterval(update, 60_000);
     return () => clearInterval(interval);
   }, []);
 
+  if (!dateStr) return null;
   return <>{dateStr}</>;
 }
