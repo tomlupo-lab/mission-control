@@ -9,34 +9,34 @@
 
 :root {
   /* shadcn CSS variables (HSL) */
-  --background: 0 0% 4%;
+  --background: 220 15% 8%;
   --foreground: 210 40% 98%;
-  --card: 215 28% 10%;
+  --card: 215 20% 13%;
   --card-foreground: 210 40% 98%;
   --primary: 160 84% 39%;
   --primary-foreground: 0 0% 4%;
   --secondary: 263 70% 50%;
   --secondary-foreground: 210 40% 98%;
-  --muted: 215 20% 16%;
+  --muted: 215 18% 18%;
   --muted-foreground: 215 20% 55%;
   --accent: 160 84% 39%;
   --accent-foreground: 0 0% 4%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 210 40% 98%;
-  --border: 215 20% 18%;
-  --input: 215 20% 16%;
+  --border: 215 18% 22%;
+  --input: 215 18% 18%;
   --ring: 160 84% 39%;
   --radius: 16px;
 
   /* Custom hex vars */
-  --bg: #0a0a0a;
-  --bg-subtle: #050505;
-  --card-hex: rgba(15, 23, 42, 0.5);
-  --card-hover: #1e293b;
-  --card2: #1e293b;
-  --input-hex: #1e293b;
-  --border-hex: #1e293b;
-  --border-subtle: #1e293b;
+  --bg: #111318;
+  --bg-subtle: #0c0e12;
+  --card-hex: rgba(20, 28, 45, 0.6);
+  --card-hover: #232b3e;
+  --card2: #1c2333;
+  --input-hex: #1c2333;
+  --border-hex: #2a3348;
+  --border-subtle: #1e2738;
   --text: #f1f5f9;
   --text-secondary: #94a3b8;
   --muted-hex: #64748b;
