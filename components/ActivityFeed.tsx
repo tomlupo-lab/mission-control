@@ -29,7 +29,6 @@ export default function ActivityFeed() {
 
   const items: FeedItem[] = [];
 
-  // Cron jobs
   (cronJobs ?? []).forEach((j: any) => {
     if (j.lastRun) {
       items.push({
@@ -42,7 +41,6 @@ export default function ActivityFeed() {
     }
   });
 
-  // Reports
   (reports ?? []).forEach((r: any) => {
     items.push({
       id: `report-${r._id}`,
@@ -53,7 +51,6 @@ export default function ActivityFeed() {
     });
   });
 
-  // Trades
   (trades ?? []).forEach((t: any) => {
     const pnl = t.pnl ?? 0;
     items.push({
@@ -70,22 +67,31 @@ export default function ActivityFeed() {
 
   if (display.length === 0) {
     return (
-      <div className="card" style={{ padding: "var(--space-lg)" }}>
-        <h2 style={{ margin: 0, marginBottom: "var(--space-md)" }}>⚡ Activity Feed</h2>
+      <div className="animate-in" style={{
+        background: "var(--glass-bg)", backdropFilter: "blur(16px)",
+        border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)",
+        padding: "var(--space-xl)",
+      }}>
+        <h2 style={{ margin: 0, marginBottom: "var(--space-lg)", fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "1.5px" }}>⚡ Activity Feed</h2>
         <div className="meta">No recent activity</div>
       </div>
     );
   }
 
   return (
-    <div className="card" style={{ padding: "var(--space-lg)" }}>
-      <h2 style={{ margin: 0, marginBottom: "var(--space-md)" }}>⚡ Activity Feed</h2>
+    <div className="animate-in" style={{
+      background: "var(--glass-bg)", backdropFilter: "blur(16px)",
+      border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)",
+      padding: "var(--space-xl)",
+      animationDelay: "0.1s",
+    }}>
+      <h2 style={{ margin: 0, marginBottom: "var(--space-lg)", fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "1.5px" }}>⚡ Activity Feed</h2>
       <div className="activity-feed">
         {display.map((item) => (
           <div key={item.id} className="activity-item">
             <span className={`activity-dot status-dot ${item.status === "ok" ? "status-ok" : item.status === "error" ? "status-error" : "status-pending"}`} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "var(--text-sm)", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</div>
+              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</div>
               <div className="meta" style={{ fontSize: "var(--text-xs)" }}>{item.detail}</div>
             </div>
             <span className="activity-time">{timeAgo(item.time)}</span>

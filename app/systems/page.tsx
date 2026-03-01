@@ -39,36 +39,44 @@ export default function OpsPage() {
 
   return (
     <div>
-      <div className="page-header-compact"><h1><Settings size={20} style={{ color: "var(--accent-hex)" }} /> Ops</h1></div>
+      <div className="page-header-compact"><h1><Settings size={20} style={{ color: "var(--accent-hex)", filter: "drop-shadow(0 0 6px rgba(16,185,129,0.4))" }} /> Ops</h1></div>
 
       {/* Quick Stats */}
-      <div className="grid-2" style={{ marginBottom: "var(--space-md)" }}>
-        <Card>
-          <CardContent style={{ padding: "var(--space-md)", textAlign: "center" }}>
-            <div className="metric-value" style={{ fontSize: "1.6rem", color: "var(--green)" }}>{okJobs}/{totalJobs}</div>
-            <div className="label">Jobs Healthy</div>
+      <div className="grid-2" style={{ marginBottom: "var(--space-lg)" }}>
+        <Card className="animate-in" style={{ animationDelay: "0.05s" }}>
+          <CardContent style={{ padding: "var(--space-lg)", textAlign: "center" }}>
+            <div className="metric-value" style={{ fontSize: "1.6rem", color: "var(--green)", textShadow: "0 0 12px rgba(16,185,129,0.3)" }}>{okJobs}/{totalJobs}</div>
+            <div className="label" style={{ marginTop: "var(--space-sm)" }}>Jobs Healthy</div>
             <div className="meta" style={{ fontSize: "var(--text-xs)" }}>{errorJobs > 0 ? `${errorJobs} failing` : "all clear"}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent style={{ padding: "var(--space-md)", textAlign: "center" }}>
-            <div className="metric-value" style={{ fontSize: "1.6rem", color: "var(--accent-hex)" }}>{totalJobs}</div>
-            <div className="label">Total Crons</div>
+        <Card className="animate-in" style={{ animationDelay: "0.1s" }}>
+          <CardContent style={{ padding: "var(--space-lg)", textAlign: "center" }}>
+            <div className="metric-value" style={{ fontSize: "1.6rem", color: "var(--accent-hex)", textShadow: "0 0 10px rgba(16,185,129,0.2)" }}>{totalJobs}</div>
+            <div className="label" style={{ marginTop: "var(--space-sm)" }}>Total Crons</div>
             <div className="meta" style={{ fontSize: "var(--text-xs)" }}>{neverRan > 0 ? `${neverRan} pending first run` : "all active"}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Last Sync */}
-      <div className="card-compact meta" style={{ marginBottom: "var(--space-md)" }}>
-        📡 Last data sync: {health?.updatedAt ? timeAgo(health.updatedAt) : "unknown"}
+      <div className="animate-in" style={{
+        animationDelay: "0.15s",
+        background: "var(--glass-bg)",
+        backdropFilter: "blur(16px)",
+        borderRadius: "var(--radius-md)",
+        padding: "var(--space-md) var(--space-lg)",
+        marginBottom: "var(--space-lg)",
+        border: "1px solid var(--glass-border)",
+      }}>
+        <span className="meta">📡 Last data sync: {health?.updatedAt ? timeAgo(health.updatedAt) : "unknown"}</span>
       </div>
 
       {/* Cron Jobs List */}
-      <Card style={{ marginBottom: "var(--space-md)" }}>
+      <Card className="animate-in" style={{ marginBottom: "var(--space-lg)", animationDelay: "0.2s" }}>
         <CardHeader><CardTitle>⏰ Cron Jobs</CardTitle></CardHeader>
         <CardContent>
-          {sorted.length === 0 && <div className="meta" style={{ textAlign: "center", padding: "var(--space-xl)" }}>Loading cron data...</div>}
+          {sorted.length === 0 && <div className="meta" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>Loading cron data...</div>}
           {sorted.map((job: any) => {
             const statusCls = job.lastStatus === "ok" ? "status-dot status-ok" : job.lastStatus === "error" ? "status-dot status-error" : "status-dot status-pending";
             return (
@@ -78,7 +86,7 @@ export default function OpsPage() {
                   <div style={{ fontSize: "var(--text-base)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {job.name}
                   </div>
-                  <div className="meta" style={{ display: "flex", gap: "var(--space-sm)", flexWrap: "wrap" }}>
+                  <div className="meta" style={{ display: "flex", gap: "var(--space-md)", flexWrap: "wrap" }}>
                     <span>📅 {job.schedule}</span>
                     <span className="mono">⏱ {formatDuration(job.lastDurationMs)}</span>
                     <span>🕐 {timeAgo(job.lastRunAt)}</span>
@@ -95,7 +103,7 @@ export default function OpsPage() {
         </CardContent>
       </Card>
 
-      <div className="meta" style={{ textAlign: "center", padding: "var(--space-md) 0", borderTop: "1px solid var(--border-subtle)" }}>
+      <div className="meta" style={{ textAlign: "center", padding: "var(--space-lg) 0", borderTop: "1px solid var(--border-subtle)" }}>
         Mission Control · Ops · {totalJobs} jobs tracked
       </div>
     </div>

@@ -18,7 +18,6 @@ const AGENTS = [
   { id: "chef", label: "Chef", icon: "🍽️" },
 ];
 
-// Map weekly report domains to agent filter ids
 const WEEKLY_DOMAIN_TO_AGENT: Record<string, string> = {
   coach: "coach",
   chef: "chef",
@@ -71,7 +70,6 @@ export default function ReportsPage() {
     expandedId ? { reportId: expandedId } : "skip"
   );
 
-  // Merge reports + weekly reports into unified list
   const merged = useMemo(() => {
     const items: any[] = [];
     if (reports) {
@@ -107,16 +105,16 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <div className="page-header-compact"><h1><FileText size={20} style={{ color: "var(--purple)" }} /> Reports</h1></div>
+      <div className="page-header-compact"><h1><FileText size={20} style={{ color: "var(--purple)", filter: "drop-shadow(0 0 6px rgba(139,92,246,0.4))" }} /> Reports</h1></div>
 
       {/* Agent filter pills */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: "var(--space-lg)" }}>
+      <div className="animate-in" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: "var(--space-xl)" }}>
         {AGENTS.map((a) => (
           <Badge
             key={a.id}
             variant={agentFilter === a.id ? "live" : "default"}
             onClick={() => { setAgentFilter(a.id); setExpandedId(null); }}
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", transition: "all 0.2s ease" }}
           >
             {a.icon} {a.label}
           </Badge>
@@ -125,13 +123,13 @@ export default function ReportsPage() {
 
       {/* Expanded detail — regular report */}
       {expandedId && detail && (
-        <Card style={{ marginBottom: "var(--space-lg)", border: "1px solid var(--border-hex)", padding: "var(--space-xl)" }}>
+        <Card style={{ marginBottom: "var(--space-xl)", padding: "var(--space-2xl)", borderColor: "rgba(16, 185, 129, 0.15)" }}>
           <CardContent style={{ padding: 0 }}>
             <div className="flex-between">
-              <h2 style={{ fontSize: "var(--text-lg)", margin: 0, textTransform: "none", letterSpacing: 0 }}>{detail.title}</h2>
-              <button onClick={() => setExpandedId(null)} style={{ background: "none", border: "none", color: "var(--muted-hex)", cursor: "pointer", fontSize: "1.1rem" }}>✕</button>
+              <h2 style={{ fontSize: "var(--text-lg)", margin: 0, textTransform: "none", letterSpacing: 0, fontWeight: 700 }}>{detail.title}</h2>
+              <button onClick={() => setExpandedId(null)} style={{ background: "none", border: "none", color: "var(--muted-hex)", cursor: "pointer", fontSize: "1.1rem", transition: "color 0.2s" }}>✕</button>
             </div>
-            <div className="meta" style={{ marginBottom: "var(--space-sm)" }}>
+            <div className="meta" style={{ marginBottom: "var(--space-md)" }}>
               {detail.agent} · {detail.reportType} · {detail.date}
               {(detail.deliveredTo ?? []).map((ch: string) => (
                 <span key={ch} style={{ marginLeft: 6 }}>{DELIVERY_ICONS[ch] || "📤"}</span>
@@ -146,18 +144,18 @@ export default function ReportsPage() {
         </Card>
       )}
 
-      {/* Expanded detail — weekly report (inline content) */}
+      {/* Expanded detail — weekly report */}
       {expandedWeeklyId && (() => {
         const wr = merged.find((r) => r._source === "weekly" && r._id === expandedWeeklyId);
         if (!wr) return null;
         return (
-          <Card style={{ marginBottom: "var(--space-lg)", border: "1px solid var(--border-hex)", padding: "var(--space-xl)" }}>
+          <Card style={{ marginBottom: "var(--space-xl)", padding: "var(--space-2xl)", borderColor: "rgba(16, 185, 129, 0.15)" }}>
             <CardContent style={{ padding: 0 }}>
               <div className="flex-between">
-                <h2 style={{ fontSize: "var(--text-lg)", margin: 0, textTransform: "none", letterSpacing: 0 }}>{wr.title}</h2>
+                <h2 style={{ fontSize: "var(--text-lg)", margin: 0, textTransform: "none", letterSpacing: 0, fontWeight: 700 }}>{wr.title}</h2>
                 <button onClick={() => setExpandedWeeklyId(null)} style={{ background: "none", border: "none", color: "var(--muted-hex)", cursor: "pointer", fontSize: "1.1rem" }}>✕</button>
               </div>
-              <div className="meta" style={{ marginBottom: "var(--space-sm)" }}>
+              <div className="meta" style={{ marginBottom: "var(--space-md)" }}>
                 {wr.agent} · weekly · {wr.date}
               </div>
               <div className="prose">
@@ -178,9 +176,9 @@ export default function ReportsPage() {
         </CardContent></Card>
       )}
 
-      {Object.entries(grouped).map(([dateLabel, items]) => (
-        <div key={dateLabel} style={{ marginBottom: "var(--space-lg)" }}>
-          <div className="label" style={{ fontWeight: 600, marginBottom: "var(--space-sm)" }}>{dateLabel}</div>
+      {Object.entries(grouped).map(([dateLabel, items], groupIdx) => (
+        <div key={dateLabel} className="animate-in" style={{ marginBottom: "var(--space-xl)", animationDelay: `${0.05 * groupIdx}s` }}>
+          <div className="label" style={{ fontWeight: 700, marginBottom: "var(--space-md)" }}>{dateLabel}</div>
           {items.map((r: any) => {
             const agentMeta = AGENTS.find((a) => a.id === r.agent);
             const handleClick = () => {
@@ -194,14 +192,14 @@ export default function ReportsPage() {
             };
             return (
               <Card key={r._id} onClick={handleClick}
-                style={{ marginBottom: "var(--space-sm)", cursor: "pointer" }}>
-                <CardContent style={{ padding: "var(--space-lg)" }}>
-                  <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "flex-start" }}>
-                    <span style={{ fontSize: "1.2rem" }}>{agentMeta?.icon || "📄"}</span>
+                style={{ marginBottom: "var(--space-md)", cursor: "pointer" }}>
+                <CardContent style={{ padding: "var(--space-xl)" }}>
+                  <div style={{ display: "flex", gap: "var(--space-md)", alignItems: "flex-start" }}>
+                    <span style={{ fontSize: "1.2rem", filter: "drop-shadow(0 0 4px rgba(255,255,255,0.1))" }}>{agentMeta?.icon || "📄"}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: "var(--text-base)", fontWeight: 600 }}>{r.title}</div>
-                      <div className="meta" style={{ marginTop: 2 }}>{r.summary?.slice(0, 120)}</div>
-                      <div className="meta" style={{ marginTop: "var(--space-xs)" }}>
+                      <div style={{ fontSize: "var(--text-base)", fontWeight: 700 }}>{r.title}</div>
+                      <div className="meta" style={{ marginTop: 3 }}>{r.summary?.slice(0, 120)}</div>
+                      <div className="meta" style={{ marginTop: "var(--space-sm)" }}>
                         {r.reportType}
                         {(r.deliveredTo ?? []).map((ch: string) => (
                           <span key={ch} style={{ marginLeft: 4 }}>{DELIVERY_ICONS[ch] || "📤"}</span>

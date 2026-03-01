@@ -39,7 +39,6 @@ const DIMENSION_CONFIG: Record<string, { icon: React.ReactNode; color: string; d
   },
 };
 
-// Map TES domain names to 5 dimensions
 const DOMAIN_TO_DIMENSION: Record<string, string> = {
   Movement: "Body",
   Mind: "Mind",
@@ -76,71 +75,90 @@ export default function ProgressPage() {
   return (
     <div>
       <div className="page-header-compact">
-        <h1><Gamepad2 size={20} style={{ color: "#8b5cf6" }} /> Progress</h1>
+        <h1><Gamepad2 size={20} style={{ color: "#8b5cf6", filter: "drop-shadow(0 0 6px rgba(139,92,246,0.4))" }} /> Progress</h1>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "var(--space-xl)" }}>
-        {/* Top section: Radar + Level */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "var(--space-lg)" }} className="progress-top-grid">
-          {/* Radar Chart Card */}
-          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6" style={{ background: "var(--card-hex)", border: "1px solid var(--border-hex)", borderRadius: "var(--radius-lg)", padding: "var(--space-xl)" }}>
-            <h3 style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "var(--space-lg)" }}>Character Profile</h3>
-            <div style={{ width: "100%", height: 280 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                  <PolarGrid stroke="#1e293b" />
-                  <PolarAngleAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 12 }} />
-                  <Radar name="Tom" dataKey="value" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
-                </RadarChart>
-              </ResponsiveContainer>
+        {/* Radar Chart Card */}
+        <div className="animate-in" style={{
+          background: "var(--glass-bg)",
+          backdropFilter: "blur(16px)",
+          border: "1px solid var(--glass-border)",
+          borderRadius: "var(--radius-xl)",
+          padding: "var(--space-2xl)",
+        }}>
+          <h3 style={{ fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "2px", marginBottom: "var(--space-xl)" }}>Character Profile</h3>
+          <div style={{ width: "100%", height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                <PolarGrid stroke="rgba(34, 48, 74, 0.4)" />
+                <PolarAngleAxis dataKey="name" tick={{ fill: "#8b9dc3", fontSize: 12, fontFamily: "'Exo 2', sans-serif" }} />
+                <Radar name="Tom" dataKey="value" stroke="#10b981" fill="#10b981" fillOpacity={0.2} strokeWidth={2} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ marginTop: "var(--space-xl)", paddingTop: "var(--space-xl)", borderTop: "1px solid var(--glass-border)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontSize: "var(--text-xs)", color: "var(--muted-hex)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "1.5px" }}>Overall Level</span>
+              <span style={{ fontSize: "var(--text-xs)", color: "#10b981", fontFamily: "'JetBrains Mono', monospace", textShadow: "0 0 8px rgba(16,185,129,0.3)" }}>LVL {tes?.level ?? 1}</span>
             </div>
-            <div style={{ marginTop: "var(--space-lg)", paddingTop: "var(--space-lg)", borderTop: "1px solid var(--border-hex)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <span style={{ fontSize: "var(--text-xs)", color: "var(--muted-hex)", textTransform: "uppercase", fontWeight: 700 }}>Overall Level</span>
-                <span style={{ fontSize: "var(--text-xs)", color: "#10b981", fontFamily: "'JetBrains Mono', monospace" }}>LVL {tes?.level ?? 1}</span>
-              </div>
-              <div style={{ width: "100%", height: 8, background: "#1e293b", borderRadius: 4, overflow: "hidden" }}>
-                <div style={{
-                  width: `${Math.min(100, (tes?.xp ?? 0) / Math.max((tes?.xp ?? 0) + 50, 1) * 100)}%`,
-                  height: "100%",
-                  background: "#10b981",
-                  boxShadow: "0 0 10px rgba(16,185,129,0.5)",
-                  borderRadius: 4,
-                }} />
-              </div>
-              <div style={{ textAlign: "center", marginTop: "var(--space-md)" }}>
-                <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "#8b5cf6" }}>{(tes?.className as string) || "The Regulated Architect"}</div>
-                <div className="mono" style={{ fontSize: "var(--text-sm)", color: "var(--text)" }}>{tes?.totalXp ?? 0} XP</div>
-                <div style={{ fontSize: "var(--text-xs)", color: "var(--muted-hex)" }}>{(tes?.totalEvents as number) || 0} events logged</div>
-              </div>
+            <div style={{ width: "100%", height: 8, background: "rgba(34, 48, 74, 0.4)", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{
+                width: `${Math.min(100, (tes?.xp ?? 0) / Math.max((tes?.xp ?? 0) + 50, 1) * 100)}%`,
+                height: "100%",
+                background: "linear-gradient(90deg, #10b981, #34d399)",
+                boxShadow: "0 0 14px rgba(16,185,129,0.5), 0 0 30px rgba(16,185,129,0.2)",
+                borderRadius: 4,
+              }} />
+            </div>
+            <div style={{ textAlign: "center", marginTop: "var(--space-lg)" }}>
+              <div style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "#8b5cf6", textShadow: "0 0 10px rgba(139,92,246,0.3)", letterSpacing: "0.5px" }}>{(tes?.className as string) || "The Regulated Architect"}</div>
+              <div className="mono" style={{ fontSize: "var(--text-lg)", color: "var(--text)", marginTop: 4, textShadow: "0 0 8px rgba(16,185,129,0.2)" }}>{tes?.totalXp ?? 0} XP</div>
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--muted-hex)", marginTop: 2 }}>{(tes?.totalEvents as number) || 0} events logged</div>
             </div>
           </div>
         </div>
 
         {/* Dimension stat cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "var(--space-md)" }}>
-          {radarData.map((stat) => {
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "var(--space-lg)" }}>
+          {radarData.map((stat, idx) => {
             const cfg = DIMENSION_CONFIG[stat.name];
             if (!cfg) return null;
             return (
-              <div key={stat.name} style={{
-                background: "var(--card-hex)", border: "1px solid var(--border-hex)",
-                borderRadius: "var(--radius-lg)", padding: "var(--space-xl)",
-                transition: "border-color 0.2s",
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "var(--space-md)" }}>
-                  <div style={{ padding: 8, borderRadius: "var(--radius-md)", background: "#1e293b", color: cfg.color }}>
+              <div key={stat.name} className="animate-in" style={{
+                animationDelay: `${0.05 * (idx + 1)}s`,
+                background: "var(--glass-bg)",
+                backdropFilter: "blur(16px)",
+                border: "1px solid var(--glass-border)",
+                borderRadius: "var(--radius-lg)",
+                padding: "var(--space-xl)",
+                transition: "border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = `${cfg.color}33`;
+                (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px ${cfg.color}15`;
+                (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = "";
+                (e.currentTarget as HTMLElement).style.boxShadow = "";
+                (e.currentTarget as HTMLElement).style.transform = "";
+              }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "var(--space-lg)" }}>
+                  <div style={{ padding: 10, borderRadius: "var(--radius-md)", background: `${cfg.color}12`, color: cfg.color, border: `1px solid ${cfg.color}20` }}>
                     {cfg.icon}
                   </div>
-                  <span className="mono" style={{ fontSize: "1.5rem", fontWeight: 700, color: cfg.color }}>{stat.value}</span>
+                  <span className="mono" style={{ fontSize: "1.6rem", fontWeight: 700, color: cfg.color, textShadow: `0 0 12px ${cfg.color}40` }}>{stat.value}</span>
                 </div>
-                <h4 style={{ fontSize: "1rem", fontWeight: 700, color: "#f1f5f9", marginBottom: 4 }}>{stat.name}</h4>
-                <p style={{ fontSize: "var(--text-xs)", color: "#94a3b8", marginBottom: "var(--space-md)", lineHeight: 1.5 }}>{cfg.description}</p>
+                <h4 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text)", marginBottom: 4, letterSpacing: "0.3px" }}>{stat.name}</h4>
+                <p style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)", marginBottom: "var(--space-lg)", lineHeight: 1.6 }}>{cfg.description}</p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {cfg.subStats.map((sub) => (
                     <span key={sub} style={{
-                      padding: "2px 8px", background: "rgba(30,41,59,0.5)", borderRadius: 6,
-                      fontSize: "0.6rem", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px",
+                      padding: "3px 10px", background: "rgba(14, 20, 32, 0.6)", borderRadius: 6,
+                      fontSize: "0.6rem", color: "var(--muted-hex)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px",
+                      border: "1px solid rgba(34, 48, 74, 0.3)",
                     }}>{sub}</span>
                   ))}
                 </div>
@@ -151,18 +169,24 @@ export default function ProgressPage() {
 
         {/* Streaks */}
         {Object.keys(streaks).length > 0 && (
-          <div style={{ background: "var(--card-hex)", border: "1px solid var(--border-hex)", borderRadius: "var(--radius-lg)", padding: "var(--space-xl)" }}>
-            <h3 style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "var(--space-md)" }}>🔥 Streaks</h3>
+          <div className="animate-in" style={{
+            animationDelay: "0.2s",
+            background: "var(--glass-bg)", backdropFilter: "blur(16px)",
+            border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-xl)"
+          }}>
+            <h3 style={{ fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "var(--space-lg)" }}>🔥 Streaks</h3>
             <div className="grid-2">
               {Object.entries(streaks).map(([name, val]: [string, any]) => {
                 const days = typeof val === "number" ? val : val?.days ?? val?.current ?? 0;
+                const streakColor = days >= 7 ? "#10b981" : days >= 3 ? "#f59e0b" : "var(--muted-hex)";
                 return (
                   <div key={name} style={{
-                    padding: "var(--space-sm) var(--space-md)", background: "#1e293b",
+                    padding: "var(--space-md) var(--space-lg)", background: "rgba(14, 20, 32, 0.5)",
                     borderRadius: "var(--radius-sm)", display: "flex", justifyContent: "space-between", alignItems: "center",
+                    border: "1px solid rgba(34, 48, 74, 0.2)",
                   }}>
-                    <span style={{ fontSize: "var(--text-sm)", color: "#94a3b8" }}>{name}</span>
-                    <span className="metric-value" style={{ color: days >= 7 ? "#10b981" : days >= 3 ? "#f59e0b" : "var(--muted-hex)" }}>{days}d</span>
+                    <span style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>{name}</span>
+                    <span className="metric-value" style={{ color: streakColor, textShadow: days >= 7 ? "0 0 8px rgba(16,185,129,0.3)" : "none" }}>{days}d</span>
                   </div>
                 );
               })}
@@ -171,16 +195,20 @@ export default function ProgressPage() {
         )}
 
         {/* Ziolo */}
-        <div style={{ background: "var(--card-hex)", border: "1px solid var(--border-hex)", borderRadius: "var(--radius-lg)", padding: "var(--space-xl)" }}>
-          <h3 style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "var(--space-md)" }}>🌿 Weed-Free</h3>
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-lg)" }}>
+        <div className="animate-in" style={{
+          animationDelay: "0.25s",
+          background: "var(--glass-bg)", backdropFilter: "blur(16px)",
+          border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-xl)"
+        }}>
+          <h3 style={{ fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "var(--space-lg)" }}>🌿 Weed-Free</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xl)" }}>
             <div className="streak-big">{ziolo?.currentStreak ?? 0}d</div>
             <div>
-              <div style={{ fontSize: "var(--text-sm)", color: "#94a3b8" }}>Last use: {ziolo?.lastUseDate ?? "—"}</div>
-              <div style={{ fontSize: "var(--text-sm)", color: "#94a3b8", marginTop: 2 }}>
+              <div style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>Last use: {ziolo?.lastUseDate ?? "—"}</div>
+              <div style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)", marginTop: 4 }}>
                 Month: {ziolo?.monthlyUseDays ?? 0}/{ziolo?.monthlyGoal ?? 8} · Year: {ziolo?.yearlyUseDays ?? 0}/{ziolo?.yearlyGoal ?? 96}
               </div>
-              <div style={{ marginTop: "var(--space-sm)" }}>
+              <div style={{ marginTop: "var(--space-md)" }}>
                 <Progress value={Math.min(100, ((ziolo?.monthlyUseDays ?? 0) / (ziolo?.monthlyGoal ?? 8)) * 100)} indicatorColor="#10b981" />
               </div>
             </div>
@@ -188,20 +216,26 @@ export default function ProgressPage() {
         </div>
 
         {/* Badges */}
-        <div style={{ background: "var(--card-hex)", border: "1px solid var(--border-hex)", borderRadius: "var(--radius-lg)", padding: "var(--space-xl)" }}>
-          <h3 style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "var(--space-md)" }}>🏆 Badges ({badges.length})</h3>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <div className="animate-in" style={{
+          animationDelay: "0.3s",
+          background: "var(--glass-bg)", backdropFilter: "blur(16px)",
+          border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-xl)"
+        }}>
+          <h3 style={{ fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "var(--space-lg)" }}>🏆 Badges ({badges.length})</h3>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {badges.length > 0 ? (
               [...badges].reverse().map((b: string, i: number) => {
-                let borderColor = "var(--border-hex)";
-                let textColor = "#94a3b8";
-                if (b.startsWith("Gold")) { borderColor = "#ca8a04"; textColor = "#fbbf24"; }
-                else if (b.startsWith("Silver")) { borderColor = "#52525b"; textColor = "#a1a1aa"; }
-                else { borderColor = "#92400e"; textColor = "#d97706"; }
+                let borderColor = "var(--glass-border)";
+                let textColor = "var(--text-secondary)";
+                let bgColor = "rgba(14, 20, 32, 0.5)";
+                if (b.startsWith("Gold")) { borderColor = "rgba(202,138,4,0.4)"; textColor = "#fbbf24"; bgColor = "rgba(202,138,4,0.06)"; }
+                else if (b.startsWith("Silver")) { borderColor = "rgba(82,82,91,0.4)"; textColor = "#a1a1aa"; bgColor = "rgba(82,82,91,0.06)"; }
+                else { borderColor = "rgba(146,64,14,0.4)"; textColor = "#d97706"; bgColor = "rgba(146,64,14,0.06)"; }
                 return (
                   <span key={i} style={{
-                    fontSize: "var(--text-xs)", padding: "3px 8px", borderRadius: "var(--radius-sm)",
-                    border: `1px solid ${borderColor}`, color: textColor, background: "#1e293b",
+                    fontSize: "var(--text-xs)", padding: "4px 10px", borderRadius: "var(--radius-sm)",
+                    border: `1px solid ${borderColor}`, color: textColor, background: bgColor,
+                    letterSpacing: "0.3px",
                   }}>{b}</span>
                 );
               })

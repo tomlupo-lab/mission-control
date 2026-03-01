@@ -7,30 +7,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from "recharts";
 
-function MetricTile({ label, value, unit, color }: { label: string; value: number | string | undefined; unit?: string; color?: string }) {
+function MetricTile({ label, value, unit, color, delay }: { label: string; value: number | string | undefined; unit?: string; color?: string; delay?: number }) {
+  const isGreen = color === "var(--green)" || color === "var(--accent-hex)";
   return (
-    <Card>
-      <CardContent style={{ padding: "var(--space-md)", textAlign: "center" }}>
-        <div className="metric-value" style={{ fontSize: "1.6rem", color: color || "var(--accent-hex)" }}>
+    <Card className="animate-in" style={{ animationDelay: `${delay || 0}s` }}>
+      <CardContent style={{ padding: "var(--space-lg)", textAlign: "center" }}>
+        <div className="metric-value" style={{
+          fontSize: "1.6rem",
+          color: color || "var(--accent-hex)",
+          textShadow: isGreen ? "0 0 12px rgba(16,185,129,0.3)" : "none",
+        }}>
           {value ?? "—"}
-          {unit && <span style={{ fontSize: "var(--text-xs)", color: "var(--muted-hex)", marginLeft: 2 }}>{unit}</span>}
+          {unit && <span style={{ fontSize: "var(--text-xs)", color: "var(--muted-hex)", marginLeft: 3 }}>{unit}</span>}
         </div>
-        <div className="label" style={{ marginTop: "var(--space-xs)" }}>{label}</div>
+        <div className="label" style={{ marginTop: "var(--space-sm)" }}>{label}</div>
       </CardContent>
     </Card>
   );
 }
 
 function HRVBarColor(hrv: number) {
-  if (hrv >= 65) return "var(--green)";
-  if (hrv >= 50) return "var(--orange)";
-  return "var(--red)";
+  if (hrv >= 65) return "#10b981";
+  if (hrv >= 50) return "#f59e0b";
+  return "#ef4444";
 }
 
 function SleepBarColor(score: number) {
-  if (score >= 80) return "var(--green)";
-  if (score >= 60) return "var(--orange)";
-  return "var(--red)";
+  if (score >= 80) return "#10b981";
+  if (score >= 60) return "#f59e0b";
+  return "#ef4444";
 }
 
 export default function HealthPage() {
@@ -50,34 +55,34 @@ export default function HealthPage() {
 
   return (
     <div>
-      <div className="page-header-compact"><h1><Heart size={20} style={{ color: "var(--red)" }} /> Health</h1></div>
+      <div className="page-header-compact"><h1><Heart size={20} style={{ color: "var(--red)", filter: "drop-shadow(0 0 6px rgba(239,68,68,0.4))" }} /> Health</h1></div>
 
       {/* Today's metrics */}
-      <div className="grid-3" style={{ marginBottom: "var(--space-md)" }}>
-        <MetricTile label="HRV" value={health?.hrv} unit="ms" color="var(--green)" />
-        <MetricTile label="RHR" value={health?.restingHR} unit="bpm" color="var(--red)" />
-        <MetricTile label="Stress" value={health?.stress} color="var(--orange)" />
-        <MetricTile label="Body Battery" value={health?.bodyBattery} color="var(--green)" />
-        <MetricTile label="Steps" value={health?.steps?.toLocaleString()} color="var(--cyan)" />
-        <MetricTile label="Training" value={health?.trainingReadiness} color="var(--purple)" />
+      <div className="grid-3" style={{ marginBottom: "var(--space-lg)" }}>
+        <MetricTile label="HRV" value={health?.hrv} unit="ms" color="var(--green)" delay={0.05} />
+        <MetricTile label="RHR" value={health?.restingHR} unit="bpm" color="var(--red)" delay={0.1} />
+        <MetricTile label="Stress" value={health?.stress} color="var(--orange)" delay={0.15} />
+        <MetricTile label="Body Battery" value={health?.bodyBattery} color="var(--green)" delay={0.2} />
+        <MetricTile label="Steps" value={health?.steps?.toLocaleString()} color="var(--cyan)" delay={0.25} />
+        <MetricTile label="Training" value={health?.trainingReadiness} color="var(--purple)" delay={0.3} />
       </div>
 
       {/* HRV 14-day chart */}
-      <Card style={{ marginBottom: "var(--space-md)" }}>
+      <Card className="animate-in" style={{ marginBottom: "var(--space-lg)", animationDelay: "0.2s" }}>
         <CardHeader>
           <CardTitle>💓 HRV Trend (14 days)</CardTitle>
         </CardHeader>
         <CardContent>
           {hrvData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={120}>
+            <ResponsiveContainer width="100%" height={130}>
               <BarChart data={hrvData} margin={{ top: 16, right: 4, bottom: 0, left: -20 }}>
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted-hex)" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "var(--muted-hex)" }} axisLine={false} tickLine={false} domain={[0, "auto"]} />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#5a6b8a", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: "#5a6b8a", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} domain={[0, "auto"]} />
                 <Tooltip
-                  contentStyle={{ background: "var(--card2)", border: "1px solid var(--border-hex)", borderRadius: 8, fontSize: 12 }}
-                  labelStyle={{ color: "var(--muted-hex)" }}
+                  contentStyle={{ background: "rgba(10, 16, 28, 0.9)", border: "1px solid rgba(34, 48, 74, 0.4)", borderRadius: 10, fontSize: 12, backdropFilter: "blur(8px)" }}
+                  labelStyle={{ color: "#5a6b8a" }}
                 />
-                <Bar dataKey="hrv" radius={[3, 3, 0, 0]}>
+                <Bar dataKey="hrv" radius={[4, 4, 0, 0]}>
                   {hrvData.map((d, i) => (
                     <Cell key={i} fill={HRVBarColor(d.hrv)} />
                   ))}
@@ -85,27 +90,27 @@ export default function HealthPage() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="meta" style={{ textAlign: "center", padding: "var(--space-xl)" }}>No data</div>
+            <div className="meta" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>No data</div>
           )}
         </CardContent>
       </Card>
 
       {/* Sleep 14-day chart */}
-      <Card style={{ marginBottom: "var(--space-md)" }}>
+      <Card className="animate-in" style={{ marginBottom: "var(--space-lg)", animationDelay: "0.25s" }}>
         <CardHeader>
           <CardTitle>😴 Sleep Trend (14 days)</CardTitle>
         </CardHeader>
         <CardContent>
           {sleepData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={120}>
+            <ResponsiveContainer width="100%" height={130}>
               <BarChart data={sleepData} margin={{ top: 16, right: 4, bottom: 0, left: -20 }}>
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted-hex)" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "var(--muted-hex)" }} axisLine={false} tickLine={false} domain={[0, 10]} />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#5a6b8a", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: "#5a6b8a", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} domain={[0, 10]} />
                 <Tooltip
-                  contentStyle={{ background: "var(--card2)", border: "1px solid var(--border-hex)", borderRadius: 8, fontSize: 12 }}
-                  labelStyle={{ color: "var(--muted-hex)" }}
+                  contentStyle={{ background: "rgba(10, 16, 28, 0.9)", border: "1px solid rgba(34, 48, 74, 0.4)", borderRadius: 10, fontSize: 12, backdropFilter: "blur(8px)" }}
+                  labelStyle={{ color: "#5a6b8a" }}
                 />
-                <Bar dataKey="hours" radius={[3, 3, 0, 0]}>
+                <Bar dataKey="hours" radius={[4, 4, 0, 0]}>
                   {sleepData.map((d, i) => (
                     <Cell key={i} fill={SleepBarColor(d.score)} />
                   ))}
@@ -113,13 +118,13 @@ export default function HealthPage() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="meta" style={{ textAlign: "center", padding: "var(--space-xl)" }}>No data</div>
+            <div className="meta" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>No data</div>
           )}
         </CardContent>
       </Card>
 
       {/* Ziolo Detail */}
-      <Card style={{ marginBottom: "var(--space-md)" }}>
+      <Card className="animate-in" style={{ marginBottom: "var(--space-lg)", animationDelay: "0.3s" }}>
         <CardHeader>
           <CardTitle>🌿 Ziolo Detail</CardTitle>
         </CardHeader>
@@ -128,7 +133,7 @@ export default function HealthPage() {
             <div className="flex-col gap-md">
               <div className="flex-between">
                 <span className="meta">Current Streak</span>
-                <span className="metric-value positive">{ziolo.currentStreak} days</span>
+                <span className="metric-value positive" style={{ textShadow: "0 0 10px rgba(16,185,129,0.3)" }}>{ziolo.currentStreak} days</span>
               </div>
               <div>
                 <div className="flex-between meta" style={{ marginBottom: "var(--space-xs)" }}>

@@ -23,9 +23,9 @@ function MacroBar({ value, target, color, label }: { value: number; target: numb
   const pct = Math.min((value / target) * 100, 100);
   return (
     <div style={{ flex: 1 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.65rem", color: "var(--muted-hex)", marginBottom: 2 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.65rem", color: "var(--muted-hex)", marginBottom: 3, fontWeight: 600, letterSpacing: "0.5px" }}>
         <span>{label}</span>
-        <span style={{ color }}>{value}g</span>
+        <span style={{ color, fontFamily: "'JetBrains Mono', monospace" }}>{value}g</span>
       </div>
       <Progress value={pct} indicatorColor={color} />
     </div>
@@ -36,9 +36,9 @@ function ComparisonBar({ planned, actual, target, color, label }: { planned: num
   const actualPct = Math.min((actual / target) * 100, 100);
   return (
     <div style={{ flex: 1 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.6rem", color: "var(--muted-hex)", marginBottom: 2 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.6rem", color: "var(--muted-hex)", marginBottom: 3, fontWeight: 600 }}>
         <span>{label}</span>
-        <span><span style={{ color }}>{actual}</span><span style={{ color: "var(--muted-hex)" }}>/{planned}g</span></span>
+        <span><span style={{ color, fontFamily: "'JetBrains Mono', monospace" }}>{actual}</span><span style={{ color: "var(--muted-hex)" }}>/{planned}g</span></span>
       </div>
       <div style={{ position: "relative" }}>
         <Progress value={Math.min((planned / target) * 100, 100)} indicatorColor={color} style={{ opacity: 0.2 }} />
@@ -70,22 +70,25 @@ function DayView({ day, loggedMeals, isToday }: { day: any; loggedMeals: any[]; 
   return (
     <div style={{ minHeight: 200 }}>
       {/* Day kcal summary */}
-      <div style={{ textAlign: "center", marginBottom: "var(--space-lg)" }}>
-        <div style={{ fontSize: "2rem", fontWeight: 800 }}>
+      <div className="animate-in" style={{ textAlign: "center", marginBottom: "var(--space-xl)" }}>
+        <div style={{ fontSize: "2.2rem", fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
           {hasLog ? (
-            <span style={{ color: logTotals.kcal > day.totalKcal * 1.1 ? "var(--orange)" : "var(--green)" }}>
+            <span style={{
+              color: logTotals.kcal > day.totalKcal * 1.1 ? "var(--orange)" : "var(--green)",
+              textShadow: logTotals.kcal <= day.totalKcal * 1.1 ? "0 0 14px rgba(16,185,129,0.3)" : "0 0 14px rgba(245,158,11,0.3)",
+            }}>
               {Math.round(logTotals.kcal)}
             </span>
           ) : (
             <span style={{ color: "var(--muted-hex)" }}>{day.totalKcal}</span>
           )}
-          <span style={{ fontSize: "0.9rem", color: "var(--muted-hex)", fontWeight: 400 }}> / {day.totalKcal} kcal</span>
+          <span style={{ fontSize: "0.9rem", color: "var(--muted-hex)", fontWeight: 400, fontFamily: "'Exo 2', sans-serif" }}> / {day.totalKcal} kcal</span>
         </div>
         {day.isFish && <span style={{ fontSize: "0.75rem" }}>🐟 Fish day</span>}
       </div>
 
       {/* Macro bars */}
-      <div style={{ display: "flex", gap: 10, marginBottom: "var(--space-lg)" }}>
+      <div className="animate-in" style={{ display: "flex", gap: 12, marginBottom: "var(--space-xl)", animationDelay: "0.05s" }}>
         {hasLog ? (
           <>
             <ComparisonBar planned={day.totalCarbs} actual={Math.round(logTotals.carbs)} target={230} color="var(--cyan)" label="Carbs" />
@@ -103,21 +106,21 @@ function DayView({ day, loggedMeals, isToday }: { day: any; loggedMeals: any[]; 
 
       {/* Logged meals */}
       {hasLog && (
-        <Card style={{ marginBottom: "var(--space-md)" }}>
-          <CardContent style={{ padding: "var(--space-md) var(--space-lg)" }}>
-            <div style={{ fontSize: "0.7rem", fontWeight: 600, color: "var(--green)", marginBottom: 8 }}>✅ Logged</div>
+        <Card className="animate-in" style={{ marginBottom: "var(--space-lg)", animationDelay: "0.1s" }}>
+          <CardContent style={{ padding: "var(--space-lg) var(--space-xl)" }}>
+            <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--green)", marginBottom: 10, textTransform: "uppercase", letterSpacing: "1px" }}>✅ Logged</div>
             {Object.entries(logByType).map(([type, meals]) => (
-              <div key={type} style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>
+              <div key={type} style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
                   {getMealEmoji(type)} {type}
                 </div>
                 {meals.map((m: any, i: number) => (
-                  <div key={i} style={{ padding: "4px 0 4px 20px", fontSize: "0.75rem" }}>
+                  <div key={i} style={{ padding: "5px 0 5px 20px", fontSize: "0.75rem" }}>
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: "var(--text-secondary-hex, #A0A8C8)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
+                      <span style={{ color: "var(--text-secondary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
                       <span style={{ color: "var(--muted-hex)", marginLeft: 8, whiteSpace: "nowrap", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem" }}>{Math.round(m.kcal)}</span>
                     </div>
-                    <div style={{ display: "flex", gap: 12, fontSize: "0.6rem", marginTop: 2 }}>
+                    <div style={{ display: "flex", gap: 14, fontSize: "0.6rem", marginTop: 3, fontFamily: "'JetBrains Mono', monospace" }}>
                       <span style={{ color: "var(--cyan)" }}>C:{Math.round(m.carbs)}g</span>
                       <span style={{ color: "var(--green)" }}>P:{Math.round(m.protein)}g</span>
                       <span style={{ color: "var(--orange)" }}>F:{Math.round(m.fat)}g</span>
@@ -131,23 +134,23 @@ function DayView({ day, loggedMeals, isToday }: { day: any; loggedMeals: any[]; 
       )}
 
       {/* Planned meals */}
-      <Card>
-        <CardContent style={{ padding: "var(--space-md) var(--space-lg)" }}>
-          <div style={{ fontSize: "0.7rem", fontWeight: 600, color: hasLog ? "var(--muted-hex)" : "var(--accent-hex)", marginBottom: 8 }}>
+      <Card className="animate-in" style={{ animationDelay: hasLog ? "0.15s" : "0.1s" }}>
+        <CardContent style={{ padding: "var(--space-lg) var(--space-xl)" }}>
+          <div style={{ fontSize: "0.7rem", fontWeight: 700, color: hasLog ? "var(--muted-hex)" : "var(--accent-hex)", marginBottom: 10, textTransform: "uppercase", letterSpacing: "1px" }}>
             📋 {hasLog ? "Planned" : "Plan"}
           </div>
           {day.meals.map((meal: any, i: number) => (
-            <div key={i} style={{ padding: "6px 0", borderBottom: i < day.meals.length - 1 ? "1px solid var(--border-hex)" : "none" }}>
+            <div key={i} style={{ padding: "8px 0", borderBottom: i < day.meals.length - 1 ? "1px solid var(--border-subtle)" : "none" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>
                   {getMealEmoji(meal.name)} {meal.name}
                 </span>
                 <span style={{ fontSize: "0.75rem", color: "var(--muted-hex)", fontFamily: "'JetBrains Mono', monospace" }}>{meal.kcal}</span>
               </div>
               {meal.items && (
-                <div style={{ fontSize: "0.7rem", color: "var(--muted-hex)", marginTop: 2 }}>{meal.items}</div>
+                <div style={{ fontSize: "0.7rem", color: "var(--muted-hex)", marginTop: 3 }}>{meal.items}</div>
               )}
-              <div style={{ display: "flex", gap: 12, marginTop: 3, fontSize: "0.65rem" }}>
+              <div style={{ display: "flex", gap: 14, marginTop: 4, fontSize: "0.65rem", fontFamily: "'JetBrains Mono', monospace" }}>
                 <span style={{ color: "var(--cyan)" }}>C:{meal.carbs}g</span>
                 <span style={{ color: "var(--green)" }}>P:{meal.protein}g</span>
                 <span style={{ color: "var(--orange)" }}>F:{meal.fat}g</span>
@@ -155,7 +158,7 @@ function DayView({ day, loggedMeals, isToday }: { day: any; loggedMeals: any[]; 
             </div>
           ))}
           {day.note && (
-            <div style={{ fontSize: "0.7rem", color: "var(--orange)", marginTop: 10 }}>⚠️ {day.note}</div>
+            <div style={{ fontSize: "0.7rem", color: "var(--orange)", marginTop: 12 }}>⚠️ {day.note}</div>
           )}
         </CardContent>
       </Card>
@@ -178,16 +181,13 @@ export default function MealsPage() {
 
   const planDays = mealPlan?.days ?? [];
 
-  // Find today's index
   const todayIdx = planDays.findIndex((d: any) =>
     todayStr.toLowerCase().includes(d.day.split(" ")[0].toLowerCase())
   );
   const [currentIdx, setCurrentIdx] = useState(todayIdx >= 0 ? todayIdx : 0);
 
-  // Update currentIdx when todayIdx resolves
   const resolvedIdx = todayIdx >= 0 ? todayIdx : 0;
 
-  // 7-day average from logged meals
   const logDays = Object.values(logByDate);
   const avg7d = logDays.length ? {
     kcal: Math.round(logDays.reduce((s, d) => s + d.reduce((ss: number, m: any) => ss + (m.kcal || 0), 0), 0) / logDays.length),
@@ -197,7 +197,6 @@ export default function MealsPage() {
     days: logDays.length,
   } : null;
 
-  // Swipe handling
   const touchStart = useRef<number | null>(null);
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStart.current = e.touches[0].clientX;
@@ -215,7 +214,6 @@ export default function MealsPage() {
   const currentDay = planDays[currentIdx];
   const isToday = currentDay && todayStr.toLowerCase().includes(currentDay.day.split(" ")[0].toLowerCase());
 
-  // Get logged meals for current day
   let currentLoggedMeals: any[] = [];
   if (currentDay) {
     const dayParts = currentDay.day.match(/(\d+)\s+(\w+)/);
@@ -228,14 +226,15 @@ export default function MealsPage() {
 
   return (
     <div>
-      <div className="page-header-compact"><h1><UtensilsCrossed size={20} style={{ color: "var(--orange)" }} /> Meals</h1></div>
+      <div className="page-header-compact"><h1><UtensilsCrossed size={20} style={{ color: "var(--orange)", filter: "drop-shadow(0 0 6px rgba(245,158,11,0.4))" }} /> Meals</h1></div>
 
       {/* Sticky 7-day average bar */}
-      <div style={{
+      <div className="animate-in" style={{
         position: "sticky", top: 0, zIndex: 10,
-        background: "var(--bg-hex, #141929)",
-        borderBottom: "1px solid var(--border-hex)",
-        padding: "10px 0", marginBottom: "var(--space-lg)",
+        background: "rgba(10, 13, 20, 0.9)",
+        backdropFilter: "blur(16px)",
+        borderBottom: "1px solid var(--glass-border)",
+        padding: "12px 0", marginBottom: "var(--space-xl)",
       }}>
         <div style={{ display: "flex", justifyContent: "space-around", textAlign: "center" }}>
           {[
@@ -247,10 +246,14 @@ export default function MealsPage() {
             const over = m.value && m.target ? m.value > m.target * 1.1 : false;
             return (
               <div key={m.label}>
-                <div style={{ fontSize: "1.1rem", fontWeight: 700, color: over ? "var(--orange)" : m.color, fontFamily: "'JetBrains Mono', monospace" }}>
+                <div style={{
+                  fontSize: "1.2rem", fontWeight: 700, color: over ? "var(--orange)" : m.color,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  textShadow: !over && m.color === "var(--green)" ? "0 0 8px rgba(16,185,129,0.3)" : "none",
+                }}>
                   {m.value ?? "—"}{m.unit}
                 </div>
-                <div style={{ fontSize: "0.55rem", color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                <div style={{ fontSize: "0.55rem", color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "1px", fontWeight: 600 }}>
                   {m.label}/day
                 </div>
               </div>
@@ -258,7 +261,7 @@ export default function MealsPage() {
           })}
         </div>
         {avg7d && (
-          <div style={{ textAlign: "center", fontSize: "0.55rem", color: "var(--muted-hex)", marginTop: 4 }}>
+          <div style={{ textAlign: "center", fontSize: "0.55rem", color: "var(--muted-hex)", marginTop: 6 }}>
             7-day avg · {avg7d.days} days logged
           </div>
         )}
@@ -267,24 +270,29 @@ export default function MealsPage() {
       {/* Day navigator */}
       {planDays.length > 0 && (
         <>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-lg)" }}>
+          <div className="animate-in" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-xl)", animationDelay: "0.05s" }}>
             <button
               onClick={() => currentIdx > 0 && setCurrentIdx(currentIdx - 1)}
               disabled={currentIdx === 0}
               style={{
                 background: "none", border: "none", cursor: currentIdx > 0 ? "pointer" : "default",
                 color: currentIdx > 0 ? "var(--accent-hex)" : "var(--muted-hex)",
-                padding: 8, borderRadius: 8,
+                padding: 8, borderRadius: 8, transition: "color 0.2s",
               }}
             >
               <ChevronLeft size={24} />
             </button>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "1rem", fontWeight: 700, color: isToday ? "var(--accent-hex)" : "var(--text)" }}>
+              <div style={{ fontSize: "1.05rem", fontWeight: 800, color: isToday ? "var(--accent-hex)" : "var(--text)", textShadow: isToday ? "0 0 10px rgba(16,185,129,0.3)" : "none" }}>
                 {currentDay?.day}
               </div>
               {isToday && (
-                <span style={{ fontSize: "0.6rem", padding: "1px 8px", borderRadius: 10, background: "var(--accent-dim)", color: "var(--accent-hex)", fontWeight: 600 }}>
+                <span style={{
+                  fontSize: "0.6rem", padding: "2px 10px", borderRadius: 10,
+                  background: "rgba(16, 185, 129, 0.1)", color: "var(--accent-hex)",
+                  fontWeight: 700, letterSpacing: "1px",
+                  border: "1px solid rgba(16, 185, 129, 0.2)",
+                }}>
                   TODAY
                 </span>
               )}
@@ -295,7 +303,7 @@ export default function MealsPage() {
               style={{
                 background: "none", border: "none", cursor: currentIdx < planDays.length - 1 ? "pointer" : "default",
                 color: currentIdx < planDays.length - 1 ? "var(--accent-hex)" : "var(--muted-hex)",
-                padding: 8, borderRadius: 8,
+                padding: 8, borderRadius: 8, transition: "color 0.2s",
               }}
             >
               <ChevronRight size={24} />
@@ -303,15 +311,16 @@ export default function MealsPage() {
           </div>
 
           {/* Day dots */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: "var(--space-lg)" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: "var(--space-xl)" }}>
             {planDays.map((_: any, i: number) => (
               <button
                 key={i}
                 onClick={() => setCurrentIdx(i)}
                 style={{
-                  width: i === currentIdx ? 20 : 8, height: 8, borderRadius: 4,
-                  background: i === currentIdx ? "var(--accent-hex)" : "var(--border-hex)",
-                  border: "none", cursor: "pointer", transition: "all 0.2s",
+                  width: i === currentIdx ? 22 : 8, height: 8, borderRadius: 4,
+                  background: i === currentIdx ? "var(--accent-hex)" : "rgba(34, 48, 74, 0.5)",
+                  boxShadow: i === currentIdx ? "0 0 8px rgba(16, 185, 129, 0.3)" : "none",
+                  border: "none", cursor: "pointer", transition: "all 0.25s ease",
                   padding: 0,
                 }}
               />

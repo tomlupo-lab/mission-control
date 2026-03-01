@@ -66,7 +66,7 @@ function StrategyCard({ s }: { s: any }) {
   const positions = s.positionBreakdown?.filter((p: any) => p.notional > 0 || Math.abs(p.actualWt) > 0.1) ?? [];
 
   return (
-    <Card style={{ marginBottom: "var(--space-md)" }}>
+    <Card style={{ marginBottom: "var(--space-lg)" }}>
       <CardHeader>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", minWidth: 0, flex: 1 }}>
           <CardTitle>{s.name}</CardTitle>
@@ -79,23 +79,27 @@ function StrategyCard({ s }: { s: any }) {
 
       <CardContent>
         {/* Equity + 1D */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: "var(--space-md)", marginBottom: "var(--space-md)" }}>
-          <span className="metric-value" style={{ fontSize: "var(--text-3xl)" }}>{formatUsd(s.equity)}</span>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "var(--space-md)", marginBottom: "var(--space-lg)" }}>
+          <span className="metric-value" style={{ fontSize: "var(--text-3xl)", textShadow: "0 0 14px rgba(16,185,129,0.2)" }}>{formatUsd(s.equity)}</span>
           {s.return1d != null && (
-            <span className="metric-value" style={{ fontSize: "var(--text-lg)", color: pctColor(s.return1d) }}>{formatPct(s.return1d)}</span>
+            <span className="metric-value" style={{
+              fontSize: "var(--text-lg)",
+              color: pctColor(s.return1d),
+              textShadow: s.return1d >= 0 ? "0 0 8px rgba(16,185,129,0.3)" : "0 0 8px rgba(239,68,68,0.3)",
+            }}>{formatPct(s.return1d)}</span>
           )}
         </div>
 
         {/* Equity curve */}
         {s.equityCurve && s.equityCurve.length > 1 && (
-          <div style={{ marginBottom: "var(--space-md)", marginLeft: -16, marginRight: -16 }}>
+          <div style={{ marginBottom: "var(--space-lg)", marginLeft: -16, marginRight: -16 }}>
             <LightweightChart data={s.equityCurve} height={180} />
           </div>
         )}
 
         {/* Collapsible Positions */}
         {positions.length > 0 && (
-          <div style={{ marginBottom: "var(--space-md)" }}>
+          <div style={{ marginBottom: "var(--space-lg)" }}>
             <button onClick={() => setPositionsOpen(!positionsOpen)} style={{
               background: "none", border: "none", cursor: "pointer", padding: 0,
               display: "flex", alignItems: "center", gap: "var(--space-xs)",
@@ -112,14 +116,15 @@ function StrategyCard({ s }: { s: any }) {
             </button>
 
             {positionsOpen && (
-              <div className="flex-col gap-xs" style={{ marginTop: "var(--space-sm)" }}>
+              <div className="flex-col gap-xs" style={{ marginTop: "var(--space-md)" }}>
                 {positions.map((p: any) => {
                   const sideColor = p.side === "short" ? "var(--red)" : p.side === "long" ? "var(--green)" : "var(--muted-hex)";
                   const pnlColor = (p.unrealizedPnl ?? 0) >= 0 ? "var(--green)" : "var(--red)";
                   return (
                     <div key={p.symbol} style={{
                       display: "flex", alignItems: "center", gap: "var(--space-sm)",
-                      padding: "var(--space-xs) var(--space-sm)", background: "var(--card2)", borderRadius: "var(--radius-sm)",
+                      padding: "var(--space-sm) var(--space-md)", background: "rgba(14, 20, 32, 0.5)", borderRadius: "var(--radius-sm)",
+                      border: "1px solid rgba(34, 48, 74, 0.2)",
                     }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "var(--space-xs)", width: 80, flexShrink: 0 }}>
                         <span style={{ fontWeight: 700, fontSize: "var(--text-base)" }}>{p.symbol}</span>
@@ -145,7 +150,7 @@ function StrategyCard({ s }: { s: any }) {
         )}
 
         {/* Performance row */}
-        <div className="grid-4" style={{ marginBottom: "var(--space-md)" }}>
+        <div className="grid-4" style={{ marginBottom: "var(--space-lg)" }}>
           {[
             { label: "1D", val: s.return1d },
             { label: "7D", val: s.return7d },
@@ -154,13 +159,17 @@ function StrategyCard({ s }: { s: any }) {
           ].map((p) => (
             <div key={p.label} style={{ textAlign: "center" }}>
               <div className="label">{p.label}</div>
-              <div className="metric-value" style={{ fontSize: "var(--text-base)", color: pctColor(p.val) }}>{formatPct(p.val)}</div>
+              <div className="metric-value" style={{
+                fontSize: "var(--text-base)",
+                color: pctColor(p.val),
+                textShadow: (p.val ?? 0) > 0 ? "0 0 8px rgba(16,185,129,0.2)" : "none",
+              }}>{formatPct(p.val)}</div>
             </div>
           ))}
         </div>
 
         {/* Risk row */}
-        <div className="grid-3" style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "var(--space-md)" }}>
+        <div className="grid-3" style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "var(--space-lg)" }}>
           {[
             { label: "Sharpe", val: s.sharpe != null ? s.sharpe.toFixed(2) : "—" },
             { label: "Max DD", val: s.maxDrawdown != null ? `-${s.maxDrawdown.toFixed(1)}%` : "—" },
@@ -180,7 +189,7 @@ function StrategyCard({ s }: { s: any }) {
 function TradeLogTimeline() {
   const trades = useQuery(api.trading.getRecentTrades, { limit: 30 });
   if (!trades || trades.length === 0) {
-    return <Card><CardContent className="meta" style={{ textAlign: "center", padding: "var(--space-xl)" }}>No trades recorded yet</CardContent></Card>;
+    return <Card><CardContent className="meta" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>No trades recorded yet</CardContent></Card>;
   }
 
   const grouped: Record<string, typeof trades> = {};
@@ -190,12 +199,12 @@ function TradeLogTimeline() {
   }
 
   return (
-    <div style={{ marginTop: "var(--space-lg)" }}>
+    <div style={{ marginTop: "var(--space-xl)" }}>
       <div className="section-title">📜 Recent Trades</div>
       {Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a)).map(([date, dateTrades]) => (
-        <div key={date} style={{ marginBottom: "var(--space-md)" }}>
-          <div className="label" style={{ marginBottom: "var(--space-xs)", fontWeight: 600 }}>{date}</div>
-          <div className="flex-col gap-xs">
+        <div key={date} style={{ marginBottom: "var(--space-lg)" }}>
+          <div className="label" style={{ marginBottom: "var(--space-sm)", fontWeight: 700 }}>{date}</div>
+          <div className="flex-col gap-sm">
             {dateTrades.map((t, i) => {
               const isBuy = t.side === "buy";
               const sideColor = isBuy ? "var(--green)" : "var(--red)";
@@ -203,8 +212,11 @@ function TradeLogTimeline() {
               return (
                 <div key={`${t.symbol}-${t.side}-${i}`} style={{
                   display: "flex", alignItems: "center", gap: "var(--space-sm)",
-                  padding: "var(--space-sm) var(--space-md)", background: "var(--card2)", borderRadius: "var(--radius-sm)",
+                  padding: "var(--space-md) var(--space-lg)", background: "rgba(14, 20, 32, 0.5)", borderRadius: "var(--radius-sm)",
                   borderLeft: `3px solid ${sideColor}`,
+                  border: "1px solid rgba(34, 48, 74, 0.2)",
+                  borderLeftColor: sideColor,
+                  borderLeftWidth: 3,
                 }}>
                   <Badge variant={isBuy ? "live" : "destructive"} style={{ width: 36, textAlign: "center", justifyContent: "center", padding: "1px 0" }}>
                     {t.side.toUpperCase()}
@@ -239,31 +251,34 @@ export default function TradingPage() {
 
   return (
     <div>
-      <div className="page-header-compact"><h1><TrendingUp size={20} style={{ color: "var(--accent-hex)" }} /> Trading</h1></div>
+      <div className="page-header-compact"><h1><TrendingUp size={20} style={{ color: "var(--accent-hex)", filter: "drop-shadow(0 0 6px rgba(16,185,129,0.4))" }} /> Trading</h1></div>
 
       {/* Summary */}
       {strategies && (
-        <div className="grid-3" style={{ marginBottom: "var(--space-lg)" }}>
-          <Card>
-            <CardContent style={{ padding: "var(--space-md)", textAlign: "center" }}>
-              <div className="metric-value" style={{ fontSize: "1.6rem", color: "var(--green)" }}>{formatUsd(totalEquity)}</div>
-              <div className="label">Live Equity</div>
+        <div className="grid-3" style={{ marginBottom: "var(--space-xl)" }}>
+          <Card className="animate-in" style={{ animationDelay: "0.05s" }}>
+            <CardContent style={{ padding: "var(--space-lg)", textAlign: "center" }}>
+              <div className="metric-value" style={{ fontSize: "1.6rem", color: "var(--green)", textShadow: "0 0 14px rgba(16,185,129,0.3)" }}>{formatUsd(totalEquity)}</div>
+              <div className="label" style={{ marginTop: "var(--space-sm)" }}>Live Equity</div>
               <div className="meta" style={{ fontSize: "var(--text-xs)" }}>{live.length} strategies</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent style={{ padding: "var(--space-md)", textAlign: "center" }}>
-              <div className="metric-value" style={{ fontSize: "1.6rem", color: pctColor(totalPnl1d) }}>
+          <Card className="animate-in" style={{ animationDelay: "0.1s" }}>
+            <CardContent style={{ padding: "var(--space-lg)", textAlign: "center" }}>
+              <div className="metric-value" style={{
+                fontSize: "1.6rem", color: pctColor(totalPnl1d),
+                textShadow: totalPnl1d >= 0 ? "0 0 10px rgba(16,185,129,0.3)" : "0 0 10px rgba(239,68,68,0.3)",
+              }}>
                 {totalPnl1d >= 0 ? "+" : ""}{formatUsd(totalPnl1d)}
               </div>
-              <div className="label">1D P&L</div>
+              <div className="label" style={{ marginTop: "var(--space-sm)" }}>1D P&L</div>
               <div className="meta" style={{ fontSize: "var(--text-xs)" }}>combined</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent style={{ padding: "var(--space-md)", textAlign: "center" }}>
-              <div className="metric-value" style={{ fontSize: "1.6rem", color: "var(--accent-hex)" }}>{totalPositions}</div>
-              <div className="label">Positions</div>
+          <Card className="animate-in" style={{ animationDelay: "0.15s" }}>
+            <CardContent style={{ padding: "var(--space-lg)", textAlign: "center" }}>
+              <div className="metric-value" style={{ fontSize: "1.6rem", color: "var(--accent-hex)", textShadow: "0 0 10px rgba(16,185,129,0.2)" }}>{totalPositions}</div>
+              <div className="label" style={{ marginTop: "var(--space-sm)" }}>Positions</div>
               <div className="meta" style={{ fontSize: "var(--text-xs)" }}>live</div>
             </CardContent>
           </Card>
