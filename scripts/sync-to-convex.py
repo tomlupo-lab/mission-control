@@ -413,7 +413,9 @@ def sync_trading(state: dict):
                 pos_breakdown = []
                 in_pos_table = False
                 for line in md.split("\n"):
-                    if "Position Reconciliation" in line or ("Symbol" in line and "Target Wt" in line):
+                    if "Position Reconciliation" in line or (
+                        "Symbol" in line and "Target Wt" in line
+                    ):
                         in_pos_table = True
                         continue
                     if in_pos_table:
@@ -421,7 +423,9 @@ def sync_trading(state: dict):
                         if re.match(r"^\|[\s:|-]+\|", line):
                             continue
                         # stop at next section
-                        if line.startswith("#") or (line.strip() and not line.startswith("|")):
+                        if line.startswith("#") or (
+                            line.strip() and not line.startswith("|")
+                        ):
                             break
                         pos_m = re.match(
                             r"\|\s*([A-Z]+)\s*\|\s*([-+\d.]+)%\s*\|\s*([-+\d.]+)%\s*\|\s*([-+\d.]+)%\s*\|\s*\$?([-\d,.]+)\s*\|\s*\$?([-\d,.]+)\s*\|",
@@ -429,15 +433,23 @@ def sync_trading(state: dict):
                         )
                         if pos_m:
                             actual_wt = float(pos_m.group(3))
-                            pos_breakdown.append({
-                                "symbol": pos_m.group(1),
-                                "targetWt": float(pos_m.group(2)),
-                                "actualWt": actual_wt,
-                                "drift": float(pos_m.group(4)),
-                                "notional": float(pos_m.group(5).replace(",", "")),
-                                "unrealizedPnl": float(pos_m.group(6).replace(",", "")),
-                                "side": "short" if actual_wt < 0 else "long" if actual_wt > 0 else "flat",
-                            })
+                            pos_breakdown.append(
+                                {
+                                    "symbol": pos_m.group(1),
+                                    "targetWt": float(pos_m.group(2)),
+                                    "actualWt": actual_wt,
+                                    "drift": float(pos_m.group(4)),
+                                    "notional": float(pos_m.group(5).replace(",", "")),
+                                    "unrealizedPnl": float(
+                                        pos_m.group(6).replace(",", "")
+                                    ),
+                                    "side": "short"
+                                    if actual_wt < 0
+                                    else "long"
+                                    if actual_wt > 0
+                                    else "flat",
+                                }
+                            )
 
                 strategies.append(
                     {
@@ -462,7 +474,9 @@ def sync_trading(state: dict):
                         "reportDate": report_date,
                     }
                 )
-                print(f"  ✓ Carver Trend v1: ${equity}, Sharpe {sharpe}, {len(pos_breakdown)} positions")
+                print(
+                    f"  ✓ Carver Trend v1: ${equity}, Sharpe {sharpe}, {len(pos_breakdown)} positions"
+                )
     except Exception as e:
         print(f"  ⚠ Main branch parse error: {e}")
 
@@ -739,18 +753,21 @@ def sync_trade_log(state: dict):
                     continue
                 qty = t.get("quantity", 0)
                 price = t.get("executed_price", 0)
-                convex_mutation("trading:upsertTrade", {
-                    "strategyId": "carver_trend_v1",
-                    "date": d,
-                    "timestamp": ts,
-                    "symbol": t.get("symbol", "?"),
-                    "side": t.get("action", "?"),
-                    "quantity": float(qty),
-                    "price": float(price),
-                    "notional": round(float(qty) * float(price), 2),
-                    "fee": float(t.get("fee", 0)),
-                    "status": "FILLED",
-                })
+                convex_mutation(
+                    "trading:upsertTrade",
+                    {
+                        "strategyId": "carver_trend_v1",
+                        "date": d,
+                        "timestamp": ts,
+                        "symbol": t.get("symbol", "?"),
+                        "side": t.get("action", "?"),
+                        "quantity": float(qty),
+                        "price": float(price),
+                        "notional": round(float(qty) * float(price), 2),
+                        "fee": float(t.get("fee", 0)),
+                        "status": "FILLED",
+                    },
+                )
                 trades_synced += 1
         except Exception as e:
             print(f"  ⚠ Error parsing {d}: {e}")
@@ -1037,23 +1054,27 @@ def sync_meals(state: dict):
 
 
 def sync_cron(state: dict):
-    """Sync cron job statuses from OpenClaw gateway."""
+    """Sync cron job statuses from jobs.json (source of truth)."""
     print("⏰ Syncing cron jobs...")
 
-    # Read cron jobs from gateway API
-    gateway_url = os.environ.get("GATEWAY_URL", "http://localhost:4444")
-    gateway_token = os.environ.get("GATEWAY_TOKEN", "")
-
+    # Read directly from jobs.json — the platform's source of truth.
+    # Falls back to cron_snapshot.json for backwards compatibility.
+    jobs_json = os.path.expanduser("~/.openclaw/cron/jobs.json")
     cron_cache = os.path.expanduser("~/.openclaw/workspace/data/cron_snapshot.json")
-    if not os.path.exists(cron_cache):
-        print("  ⚠ No cron snapshot — run: cron list > data/cron_snapshot.json")
+
+    source = jobs_json if os.path.exists(jobs_json) else cron_cache
+    if not os.path.exists(source):
+        print("  ⚠ No cron data — need jobs.json or cron_snapshot.json")
         return
-    sig = _file_sig(cron_cache)
+    sig = _file_sig(source)
     if sig and not _changed(state, "cron", sig):
-        print("  ↩ Cron snapshot unchanged — skipping")
+        print("  ↩ Cron data unchanged — skipping")
         return
-    with open(cron_cache) as f:
-        jobs = json.load(f)
+    with open(source) as f:
+        data = json.load(f)
+
+    # jobs.json wraps jobs in {"version":1,"jobs":[...]}, snapshot is a flat list
+    jobs = data.get("jobs", data) if isinstance(data, dict) else data
 
     count = 0
     for job in jobs:
