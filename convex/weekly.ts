@@ -29,26 +29,24 @@ export const upsertWeeklyReport = mutation({
 export const getWeeklyReports = query({
   args: { domain: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const selectFields = (r: any) => ({
-      _id: r._id,
-      domain: r.domain,
-      reportDate: r.reportDate,
-      title: r.title,
-      summary: r.summary,
-    });
     if (args.domain) {
-      const rows = await ctx.db
+      return await ctx.db
         .query("weeklyReports")
         .withIndex("by_domain_date", (q) => q.eq("domain", args.domain!))
         .order("desc")
         .collect();
-      return rows.map(selectFields);
     }
-    const rows = await ctx.db
+    return await ctx.db
       .query("weeklyReports")
-      .withIndex("by_reportDate", (q) => q)
+      .withIndex("by_reportDate")
       .order("desc")
       .collect();
-    return rows.map(selectFields);
+  },
+});
+
+export const getWeeklyReport = query({
+  args: { id: v.id("weeklyReports") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
   },
 });

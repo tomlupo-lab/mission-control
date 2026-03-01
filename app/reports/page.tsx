@@ -18,6 +18,14 @@ const AGENTS = [
   { id: "chef", label: "Chef", icon: "🍽️" },
 ];
 
+// Map weekly report domains to agent filter ids
+const WEEKLY_DOMAIN_TO_AGENT: Record<string, string> = {
+  coach: "coach",
+  chef: "chef",
+  marco: "marco",
+  qq: "qq",
+};
+
 const DELIVERY_ICONS: Record<string, string> = {
   telegram: "📱", "discord:#qq": "💬", "discord:#chef": "💬",
   "discord:#coach": "💬", "discord:#marco": "💬", "discord:#daily": "💬",
@@ -47,10 +55,15 @@ function groupByDate(items: any[]): Record<string, any[]> {
 export default function ReportsPage() {
   const [agentFilter, setAgentFilter] = useState("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedWeeklyId, setExpandedWeeklyId] = useState<string | null>(null);
 
   const reports = useQuery(api.reports.listReports, {
     agent: agentFilter === "all" ? undefined : agentFilter,
     limit: 50,
+  });
+
+  const weeklyReports = useQuery(api.weekly.getWeeklyReports, {
+    domain: agentFilter === "all" ? undefined : agentFilter,
   });
 
   const detail = useQuery(
@@ -58,10 +71,39 @@ export default function ReportsPage() {
     expandedId ? { reportId: expandedId } : "skip"
   );
 
+  // Merge reports + weekly reports into unified list
+  const merged = useMemo(() => {
+    const items: any[] = [];
+    if (reports) {
+      for (const r of reports) {
+        items.push({ ...r, _source: "report" });
+      }
+    }
+    if (weeklyReports) {
+      for (const w of weeklyReports) {
+        const agent = WEEKLY_DOMAIN_TO_AGENT[w.domain] || w.domain;
+        if (agentFilter !== "all" && agent !== agentFilter) continue;
+        items.push({
+          _id: w._id,
+          _source: "weekly",
+          reportId: `weekly_${w._id}`,
+          agent,
+          reportType: "weekly",
+          date: w.reportDate,
+          title: w.title || `${w.domain} weekly`,
+          summary: w.summary,
+          content: w.content,
+          deliveredTo: [],
+        });
+      }
+    }
+    items.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    return items;
+  }, [reports, weeklyReports, agentFilter]);
+
   const grouped = useMemo(() => {
-    if (!reports) return {};
-    return groupByDate(reports);
-  }, [reports]);
+    return groupByDate(merged);
+  }, [merged]);
 
   return (
     <div>
@@ -81,7 +123,7 @@ export default function ReportsPage() {
         ))}
       </div>
 
-      {/* Expanded detail */}
+      {/* Expanded detail — regular report */}
       {expandedId && detail && (
         <Card style={{ marginBottom: "var(--space-lg)", border: "1px solid var(--border-hex)", padding: "var(--space-xl)" }}>
           <CardContent style={{ padding: 0 }}>
@@ -104,6 +146,30 @@ export default function ReportsPage() {
         </Card>
       )}
 
+      {/* Expanded detail — weekly report (inline content) */}
+      {expandedWeeklyId && (() => {
+        const wr = merged.find((r) => r._source === "weekly" && r._id === expandedWeeklyId);
+        if (!wr) return null;
+        return (
+          <Card style={{ marginBottom: "var(--space-lg)", border: "1px solid var(--border-hex)", padding: "var(--space-xl)" }}>
+            <CardContent style={{ padding: 0 }}>
+              <div className="flex-between">
+                <h2 style={{ fontSize: "var(--text-lg)", margin: 0, textTransform: "none", letterSpacing: 0 }}>{wr.title}</h2>
+                <button onClick={() => setExpandedWeeklyId(null)} style={{ background: "none", border: "none", color: "var(--muted-hex)", cursor: "pointer", fontSize: "1.1rem" }}>✕</button>
+              </div>
+              <div className="meta" style={{ marginBottom: "var(--space-sm)" }}>
+                {wr.agent} · weekly · {wr.date}
+              </div>
+              <div className="prose">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {wr.content || "No content available."}
+                </ReactMarkdown>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Timeline */}
       {reports === undefined && <div className="shimmer" style={{ height: 200 }} />}
       {reports && Object.keys(grouped).length === 0 && (
@@ -117,8 +183,17 @@ export default function ReportsPage() {
           <div className="label" style={{ fontWeight: 600, marginBottom: "var(--space-sm)" }}>{dateLabel}</div>
           {items.map((r: any) => {
             const agentMeta = AGENTS.find((a) => a.id === r.agent);
+            const handleClick = () => {
+              if (r._source === "weekly") {
+                setExpandedWeeklyId(expandedWeeklyId === r._id ? null : r._id);
+                setExpandedId(null);
+              } else {
+                setExpandedId(expandedId === r.reportId ? null : r.reportId);
+                setExpandedWeeklyId(null);
+              }
+            };
             return (
-              <Card key={r._id} onClick={() => setExpandedId(expandedId === r.reportId ? null : r.reportId)}
+              <Card key={r._id} onClick={handleClick}
                 style={{ marginBottom: "var(--space-sm)", cursor: "pointer" }}>
                 <CardContent style={{ padding: "var(--space-lg)" }}>
                   <div style={{ display: "flex", gap: "var(--space-sm)", alignItems: "flex-start" }}>
