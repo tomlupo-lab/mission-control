@@ -267,6 +267,18 @@ export default function MealsPage() {
         )}
       </div>
 
+      {/* Stale plan warning */}
+      {planDays.length > 0 && todayIdx < 0 && (
+        <div className="animate-in" style={{
+          padding: "10px 16px", marginBottom: "var(--space-lg)",
+          background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)",
+          borderRadius: "var(--radius-md)", fontSize: "0.75rem", color: "var(--orange)",
+          textAlign: "center", fontWeight: 600,
+        }}>
+          ⚠️ Meal plan is outdated — showing last available ({mealPlan?.weekLabel || "unknown week"})
+        </div>
+      )}
+
       {/* Day navigator */}
       {planDays.length > 0 && (
         <>

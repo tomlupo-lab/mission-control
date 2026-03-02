@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Sync Garmin, TES, and Ziolo data to Convex."""
+"""Sync Garmin, TES, and weed data to Convex."""
 
 import os
 import json
-import csv
 import hashlib
 import argparse
 import urllib.request
@@ -214,24 +213,33 @@ def sync_health(state: dict):
 
 def sync_tes(state: dict):
     print("🧬 Syncing TES character...")
-    char_path = f"{WORKSPACE}/data/tes/character.json"
-    if not os.path.exists(char_path):
-        print("  ⚠ character.json not found")
+    import sqlite3
+
+    db_path = f"{WORKSPACE}/data/quark.db"
+    if not os.path.exists(db_path):
+        print("  ⚠ quark.db not found")
         return
 
-    with open(char_path) as f:
-        char = json.load(f)
-
-    # Count total events from habits.jsonl
-    total_events = 0
-    habits_path = f"{WORKSPACE}/data/tes/habits.jsonl"
-    sig = {"character": _file_sig(char_path), "habits": _file_sig(habits_path)}
-    if sig["character"] and not _changed(state, "tes", sig):
+    sig = _file_sig(db_path)
+    if sig and not _changed(state, "tes", sig):
         print("  ↩ TES unchanged — skipping")
         return
-    if os.path.exists(habits_path):
-        with open(habits_path) as hf:
-            total_events = sum(1 for line in hf if line.strip())
+
+    db = sqlite3.connect(db_path)
+    db.row_factory = sqlite3.Row
+
+    # Read character table (key/value)
+    char_rows = db.execute("SELECT key, value FROM character").fetchall()
+    char = {r["key"]: r["value"] for r in char_rows}
+
+    # Try to parse JSON values
+    for k, v in char.items():
+        try:
+            char[k] = json.loads(v)
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    total_events = db.execute("SELECT COUNT(*) FROM xp_log").fetchone()[0]
 
     args = {
         "level": char.get("overall_level", 1),
@@ -243,66 +251,75 @@ def sync_tes(state: dict):
         "className": char.get("class", "The Regulated Architect"),
         "totalEvents": total_events,
     }
+    # Ensure numeric types
+    if isinstance(args["level"], str):
+        try:
+            args["level"] = int(args["level"])
+        except ValueError:
+            args["level"] = 1
+    if isinstance(args["xp"], str):
+        try:
+            args["xp"] = int(args["xp"])
+            args["totalXp"] = args["xp"]
+        except ValueError:
+            args["xp"] = 0
+            args["totalXp"] = 0
+
     convex_mutation("tes:upsertTes", args)
-    print(f"  ✓ Level {args['level']}, XP {args['xp']}, {len(args['badges'])} badges")
+    print(
+        f"  ✓ Level {args['level']}, XP {args['xp']}, {len(args.get('badges', []))} badges"
+    )
+    db.close()
 
 
-def sync_ziolo(state: dict):
-    print("🌿 Syncing Ziolo tracker...")
-    csv_path = f"{WORKSPACE}/data/ziolo_tracker.csv"
-    if not os.path.exists(csv_path):
-        print("  ⚠ ziolo_tracker.csv not found")
-        return
-    sig = _file_sig(csv_path)
-    if sig and not _changed(state, "ziolo", sig):
-        print("  ↩ Ziolo unchanged — skipping")
-        return
+def sync_weed(state: dict):
+    print("🌿 Syncing weed tracker...")
+    import sqlite3
 
-    rows = []
-    with open(csv_path) as f:
-        reader = csv.reader(f)
-        next(reader, None)  # skip header
-        for row in reader:
-            if len(row) >= 4:
-                rows.append(row)
-
-    if not rows:
+    db_path = f"{WORKSPACE}/data/quark.db"
+    if not os.path.exists(db_path):
+        print("  ⚠ quark.db not found")
         return
 
-    last_row = rows[-1]
-    last_use_date = last_row[2].strip() if len(last_row) > 2 else ""
-    end_date = last_row[3].strip() if len(last_row) > 3 else ""
+    sig = _file_sig(db_path)
+    if sig and not _changed(state, "weed", sig):
+        print("  ↩ Weed unchanged — skipping")
+        return
+
+    db = sqlite3.connect(db_path)
+    db.row_factory = sqlite3.Row
 
     now = datetime.now()
-    if not end_date:
-        try:
-            start = datetime.strptime(last_use_date.split(" ")[0], "%Y-%m-%d")
-            current_streak = (now - start).days
-        except:
-            current_streak = 0
-    else:
-        current_streak = 0
-
     current_month = now.strftime("%Y-%m")
     current_year = now.strftime("%Y")
-    monthly_use = 0
-    yearly_use = 0
-    latest_use = ""
 
-    for row in rows:
-        start_date_str = row[2].strip() if len(row) > 2 else ""
-        if not start_date_str:
-            continue
-        use_date = start_date_str.split(" ")[0]
-        if use_date.startswith(current_month):
-            monthly_use += 1
-        if use_date.startswith(current_year):
-            yearly_use += 1
-        latest_use = use_date
+    # Get stats from weed_log
+    monthly_use = db.execute(
+        "SELECT COUNT(*) FROM weed_log WHERE used = 1 AND date LIKE ?",
+        (f"{current_month}%",),
+    ).fetchone()[0]
+
+    yearly_use = db.execute(
+        "SELECT COUNT(*) FROM weed_log WHERE used = 1 AND date LIKE ?",
+        (f"{current_year}%",),
+    ).fetchone()[0]
+
+    # Last use date
+    last_use_row = db.execute(
+        "SELECT date FROM weed_log WHERE used = 1 ORDER BY date DESC LIMIT 1"
+    ).fetchone()
+    last_use_date = last_use_row["date"] if last_use_row else now.strftime("%Y-%m-%d")
+
+    # Current clean streak (days since last use)
+    try:
+        last_use = datetime.strptime(last_use_date, "%Y-%m-%d")
+        current_streak = (now - last_use).days
+    except ValueError:
+        current_streak = 0
 
     args = {
         "currentStreak": current_streak,
-        "lastUseDate": latest_use or now.strftime("%Y-%m-%d"),
+        "lastUseDate": last_use_date,
         "monthlyUseDays": monthly_use,
         "monthlyGoal": 8,
         "yearlyUseDays": yearly_use,
@@ -312,6 +329,7 @@ def sync_ziolo(state: dict):
     print(
         f"  ✓ Streak: {current_streak}d, Monthly: {monthly_use}/8, Yearly: {yearly_use}/96"
     )
+    db.close()
 
 
 def sync_trading(state: dict):
@@ -781,9 +799,9 @@ def sync_meal_log(state: dict):
 
     print("📋 Syncing meal log...")
 
-    db_path = f"{WORKSPACE}/data/meals.db"
+    db_path = f"{WORKSPACE}/data/quark.db"
     if not os.path.exists(db_path):
-        print("  ⚠ meals.db not found")
+        print("  ⚠ quark.db not found")
         return
     sig = _file_sig(db_path)
     if sig and not _changed(state, "meal_log", sig):
@@ -1258,7 +1276,7 @@ def main():
     parser = argparse.ArgumentParser(description="Sync data to Convex.")
     parser.add_argument(
         "--only",
-        help="Comma-separated list: health,tes,ziolo,trading,meal_log,meal_plan,cron,weekly,reports",
+        help="Comma-separated list: health,tes,weed,trading,meal_log,meal_plan,cron,weekly,reports",
     )
     args = parser.parse_args()
 
@@ -1278,8 +1296,8 @@ def main():
         sync_health(state)
     if not selected or "tes" in selected:
         sync_tes(state)
-    if not selected or "ziolo" in selected:
-        sync_ziolo(state)
+    if not selected or "weed" in selected or "ziolo" in selected:
+        sync_weed(state)
     if not selected or "trading" in selected:
         sync_trading(state)
     if not selected or "meal_log" in selected:
