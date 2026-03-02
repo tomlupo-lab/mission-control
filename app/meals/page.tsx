@@ -205,16 +205,14 @@ const MONTH_MAP: Record<string, string> = {
 };
 
 function formatWeekRange(weekLabel: string): string {
-  // weekLabel is YYYY-MM-DD (Monday)
-  try {
-    const start = new Date(weekLabel + "T12:00:00");
-    const end = new Date(start);
-    end.setDate(end.getDate() + 6);
-    const fmt = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-    return `${fmt(start)} – ${fmt(end)}`;
-  } catch {
-    return weekLabel;
-  }
+  // weekLabel must be YYYY-MM-DD (Monday)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekLabel)) return weekLabel;
+  const start = new Date(weekLabel + "T12:00:00");
+  if (isNaN(start.getTime())) return weekLabel;
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const fmt = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return `${fmt(start)} – ${fmt(end)}`;
 }
 
 export default function MealsPage() {
@@ -289,12 +287,14 @@ export default function MealsPage() {
     const DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
     const dayName = currentDay.day.split(" ")[0].toLowerCase();
     const offset = DAY_NAMES.indexOf(dayName);
-    if (offset >= 0) {
+    if (offset >= 0 && /^\d{4}-\d{2}-\d{2}$/.test(selectedWeek)) {
       const base = new Date(selectedWeek + "T12:00:00");
-      base.setDate(base.getDate() + offset);
-      const dateStr = base.toISOString().slice(0, 10);
-      currentLoggedMeals = logByDate[dateStr] || [];
-    } else {
+      if (!isNaN(base.getTime())) {
+        base.setDate(base.getDate() + offset);
+        const dateStr = base.toISOString().slice(0, 10);
+        currentLoggedMeals = logByDate[dateStr] || [];
+      }
+    } else if (offset < 0) {
       // Fallback: parse "15 Mar" style day label
       const dayParts = currentDay.day.match(/(\d+)\s+(\w+)/);
       if (dayParts) {
