@@ -811,8 +811,8 @@ def sync_meal_log(state: dict):
     db = sqlite3.connect(db_path)
     db.row_factory = sqlite3.Row
 
-    # Sync last 7 days
-    cutoff = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    # Sync last 30 days
+    cutoff = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
     rows = db.execute(
         "SELECT * FROM meals WHERE date >= ? ORDER BY date, meal_type", (cutoff,)
     ).fetchall()
