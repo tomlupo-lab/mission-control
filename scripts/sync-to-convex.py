@@ -972,102 +972,181 @@ def _parse_weekly_plan_lines(lines):
 
 
 def sync_meals(state: dict):
-    """Sync weekly meal plan from Obsidian vault (preferred) or Notion fallback."""
+    """Sync weekly meal plan from quark.db (chef plan)."""
+    import sqlite3
+
     print("🍽️ Syncing meal plan...")
-    vault_path = os.environ.get("OBSIDIAN_VAULT_PATH") or os.environ.get(
-        "OBSIDIAN_VAULT_REPO_PATH"
-    )
-    week_label = None
-    lines = []
+    db_path = f"{WORKSPACE}/data/quark.db"
+    if not os.path.exists(db_path):
+        print("  ⚠ quark.db not found")
+        return
 
-    if vault_path and os.path.isdir(vault_path):
-        plans_dir = os.path.join(
-            vault_path, "notebook", "areas", "diet", "weekly-plans"
-        )
-        if not os.path.isdir(plans_dir):
-            print("  ⚠ weekly-plans directory not found in vault")
-            return
-        files = sorted(
-            [
-                f
-                for f in os.listdir(plans_dir)
-                if f.startswith("Week of ") and f.endswith(".md")
-            ]
-        )
-        if not files:
-            print("  ⚠ No weekly plan files found in vault")
-            return
-        latest = files[-1]
-        week_label = latest.replace(".md", "")
-        full_path = os.path.join(plans_dir, latest)
-        sig = _file_sig(full_path)
-        if sig and not _changed(state, "meal_plan", sig):
-            print("  ↩ Meal plan unchanged — skipping")
-            return
-        with open(full_path) as f:
-            lines = [ln.rstrip() for ln in f.readlines()]
-    else:
-        ai_hub_id = "30d0d52a-f08a-80fe-9d27-c58e931d0495"
-        children = fetch_api_bridge(f"/api/notion/blocks/{ai_hub_id}/children")
-        if not children:
-            print("  ⚠ Can't read AI Hub children")
-            return
+    db = sqlite3.connect(db_path)
+    db.row_factory = sqlite3.Row
+    row = db.execute(
+        "SELECT week_start, plan, summary FROM weekly_plans "
+        "WHERE domain='chef' ORDER BY week_start DESC LIMIT 1"
+    ).fetchone()
+    db.close()
 
-        results = children.get("results", [])
-        meal_pages = []
-        for r in results:
-            if r.get("type") == "child_page":
-                title = r["child_page"].get("title", "")
-                if "Week of" in title and "Workout" not in title:
-                    meal_pages.append((r["id"], title))
+    if not row:
+        print("  ↩ No chef plan in quark.db")
+        return
 
-        if not meal_pages:
-            print("  ⚠ No meal plan pages found")
-            return
+    week_start = row["week_start"]
+    summary = row["summary"] or None
+    sig = _hash_obj(f"{week_start}:{row['plan']}")
+    if sig and not _changed(state, "meal_plan", sig):
+        print("  ↩ Meal plan unchanged — skipping")
+        return
 
-        page_id, week_label = meal_pages[-1]
-        blocks = fetch_api_bridge(f"/api/notion/blocks/{page_id}/children")
-        if not blocks:
-            print("  ⚠ Can't read meal plan content")
-            return
+    try:
+        plan = json.loads(row["plan"])
+    except (json.JSONDecodeError, TypeError):
+        print("  ⚠ Invalid plan JSON in quark.db")
+        return
 
-        for b in blocks.get("results", []):
-            t = b.get("type", "")
-            if t in ("heading_1", "heading_2", "heading_3"):
-                rt = b[t].get("rich_text", [])
-                txt = "".join(x.get("plain_text", "") for x in rt)
-                lines.append(f"## {txt}")
-            elif t == "paragraph":
-                rt = b[t].get("rich_text", [])
-                txt = "".join(x.get("plain_text", "") for x in rt)
-                for subline in txt.split("\n"):
-                    lines.append(subline)
-            elif t == "bulleted_list_item":
-                rt = b[t].get("rich_text", [])
-                txt = "".join(x.get("plain_text", "") for x in rt)
-                lines.append(f"- {txt}")
-
-    days, summary_lines = _parse_weekly_plan_lines(lines)
+    DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+    days = []
+    for day_key in DAY_ORDER:
+        day_data = plan.get(day_key)
+        if not day_data:
+            continue
+        totals = day_data.get("totals", {})
+        meals = []
+        for m in day_data.get("meals", []):
+            meal_entry = {
+                "name": m.get("type", "meal").capitalize(),
+                "items": m.get("name", ""),
+                "kcal": int(m.get("kcal", 0)),
+                "protein": int(m.get("protein", 0)),
+                "carbs": int(m.get("carbs", 0)),
+                "fat": int(m.get("fat", 0)),
+            }
+            meals.append(meal_entry)
+        day_entry = {
+            "day": day_key,
+            "meals": meals,
+            "totalKcal": int(totals.get("kcal", 0)),
+            "totalProtein": int(totals.get("protein", 0)),
+            "totalCarbs": int(totals.get("carbs", 0)),
+            "totalFat": int(totals.get("fat", 0)),
+        }
+        if totals.get("sat_fat") is not None:
+            day_entry["satFat"] = int(totals["sat_fat"])
+        days.append(day_entry)
 
     if not days:
-        print("  ⚠ No days parsed")
+        print("  ⚠ No days parsed from plan")
         return
 
-    if not week_label:
-        print("  ⚠ Missing week label")
-        return
-
-    args = {
-        "weekLabel": week_label,
-        "days": days,
-        "summary": "\n".join(summary_lines) if summary_lines else None,
-    }
-    if args["summary"] is None:
-        del args["summary"]
+    args = {"weekLabel": week_start, "days": days}
+    if summary:
+        args["summary"] = summary
 
     convex_mutation("meals:upsertMealPlan", args)
     print(
-        f"  ✓ {week_label}: {len(days)} days, {sum(len(d['meals']) for d in days)} meals"
+        f"  ✓ Chef plan {week_start}: {len(days)} days, {sum(len(d['meals']) for d in days)} meals"
+    )
+
+
+def sync_chef_daily_brief(state: dict):
+    """Sync today's adjusted Chef brief to Convex dailyAdjustedMeals."""
+    import sqlite3
+
+    print("⚡ Syncing Chef daily brief...")
+    db_path = f"{WORKSPACE}/data/quark.db"
+    if not os.path.exists(db_path):
+        print("  ⚠ quark.db not found")
+        return
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    db = sqlite3.connect(db_path)
+    db.row_factory = sqlite3.Row
+
+    exists = db.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='daily_briefs'"
+    ).fetchone()
+    if not exists:
+        db.close()
+        print("  ↩ daily_briefs table not found")
+        return
+
+    row = db.execute(
+        "SELECT plan_today, adjustment FROM daily_briefs WHERE domain='chef' AND date=?",
+        (today,),
+    ).fetchone()
+    db.close()
+
+    if not row or not row["plan_today"]:
+        print(f"  ↩ No chef brief for {today}")
+        return
+
+    sig = _hash_obj(f"chef_brief:{today}:{row['plan_today']}")
+    if not _changed(state, "chef_daily_brief", sig):
+        print("  ↩ Chef brief unchanged — skipping")
+        return
+
+    try:
+        plan_today = json.loads(row["plan_today"])
+    except (json.JSONDecodeError, TypeError):
+        print("  ⚠ Invalid plan_today JSON in chef brief")
+        return
+
+    # Parse adjustment reason
+    adj_reason = None
+    is_adjusted = False
+    if row["adjustment"]:
+        try:
+            adj = json.loads(row["adjustment"])
+            if isinstance(adj, dict):
+                adj_reason = adj.get("reason") or adj.get("description")
+                is_adjusted = bool(adj_reason)
+            elif isinstance(adj, str) and adj.strip():
+                adj_reason = adj.strip()
+                is_adjusted = True
+        except Exception:
+            pass
+
+    meals_raw = plan_today.get("meals", [])
+    totals = plan_today.get("totals", {})
+
+    meals = []
+    for m in meals_raw:
+        meals.append(
+            {
+                "name": m.get("type", "meal").capitalize(),
+                "items": m.get("name", ""),
+                "kcal": int(m.get("kcal", 0)),
+                "protein": int(m.get("protein", 0)),
+                "carbs": int(m.get("carbs", 0)),
+                "fat": int(m.get("fat", 0)),
+            }
+        )
+
+    if not meals:
+        print("  ↩ No meals in chef brief")
+        return
+
+    args = {
+        "date": today,
+        "domain": "chef",
+        "meals": meals,
+        "totalKcal": int(totals.get("kcal", sum(m["kcal"] for m in meals))),
+        "totalProtein": int(totals.get("protein", sum(m["protein"] for m in meals))),
+        "totalCarbs": int(totals.get("carbs", sum(m["carbs"] for m in meals))),
+        "totalFat": int(totals.get("fat", sum(m["fat"] for m in meals))),
+    }
+    if is_adjusted:
+        args["isAdjusted"] = True
+    if adj_reason:
+        args["adjustmentReason"] = adj_reason[:200]
+
+    convex_mutation("meals:upsertDailyMeals", args)
+    adj_str = f" ⚡ {adj_reason[:50]}" if adj_reason else ""
+    print(
+        f"  ✓ Chef brief {today}: {len(meals)} meals, {args['totalKcal']}kcal{adj_str}"
     )
 
 
@@ -1136,147 +1215,71 @@ def sync_cron(state: dict):
 
 
 def sync_weekly_reports(state: dict):
-    """Sync weekly markdown reports (coach/marco/qq) into Convex."""
+    """Sync weekly reports from quark.db into Convex."""
+    import sqlite3
+
     print("🗂️ Syncing weekly reports...")
-    max_content_chars = 4000
-    base = os.path.join(REPO_DIR, "reports", "weekly")
-    domains = {
-        "coach": os.path.join(base, "coach"),
-        "chef": os.path.join(base, "chef"),
-        "marco": os.path.join(base, "marco"),
-        "qq": os.path.join(base, "qq"),
-    }
+    db_path = os.path.join(WORKSPACE, "data", "quark.db")
+    if not os.path.exists(db_path):
+        print("  ⚠ quark.db not found")
+        return
 
-    for domain, dirpath in domains.items():
-        if not os.path.isdir(dirpath):
-            continue
-        files = sorted([f for f in os.listdir(dirpath) if f.endswith(".md")])
-        if not files:
-            continue
-        latest = files[-1]
-        report_date = latest.replace(".md", "").split("-")[-1]
-        full_path = os.path.join(dirpath, latest)
-        sig = _file_sig(full_path)
-        key = f"weekly_reports_{domain}"
-        if sig and not _changed(state, key, sig):
-            print(f"  ↩ Weekly report unchanged: {domain}")
-            continue
-        try:
-            with open(full_path) as f:
-                content = f.read()
-        except Exception as e:
-            print(f"  ⚠ {domain} report read failed: {e}")
-            continue
+    sig = _file_sig(db_path)
+    if sig and not _changed(state, "weekly_reports", sig):
+        print("  ↩ Weekly reports unchanged — skipping")
+        return
 
-        summary = None
-        for line in content.splitlines():
-            if line.strip().startswith("#"):
-                continue
-            if line.strip():
-                summary = line.strip()
-                break
+    db = sqlite3.connect(db_path)
+    db.row_factory = sqlite3.Row
 
-        if summary and len(summary) > 200:
-            summary = summary[:200] + "…"
+    # Check table exists
+    exists = db.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='weekly_reports'"
+    ).fetchone()
+    if not exists:
+        db.close()
+        print("  ↩ weekly_reports table not yet created")
+        return
+
+    rows = db.execute(
+        "SELECT domain, week_start, title, summary, content FROM weekly_reports "
+        "ORDER BY week_start DESC"
+    ).fetchall()
+    db.close()
+
+    if not rows:
+        print("  ↩ No weekly reports in quark.db")
+        return
+
+    max_content = 4000
+    count = 0
+    for row in rows:
+        content = row["content"] or ""
         trimmed = (
             content
-            if len(content) <= max_content_chars
-            else content[:max_content_chars] + "\n\n[TRUNCATED]"
+            if len(content) <= max_content
+            else content[:max_content] + "\n\n[TRUNCATED]"
         )
         args = {
-            "domain": domain,
-            "reportDate": report_date,
-            "title": latest.replace(".md", ""),
-            "summary": summary,
-            "sourcePath": full_path,
+            "domain": row["domain"],
+            "reportDate": row["week_start"],
+            "title": row["title"] or f"{row['domain']} weekly {row['week_start']}",
+            "summary": (row["summary"] or "")[:200] or None,
             "content": trimmed,
         }
+        if args["summary"] is None:
+            del args["summary"]
         convex_mutation("weekly:upsertWeeklyReport", args)
-        print(f"  ✓ Weekly report synced: {domain} {report_date}")
+        count += 1
 
-
-def sync_reports(state: dict):
-    """Sync structured report JSON files to Convex, then archive them."""
-    print("📝 Syncing reports...")
-    reports_dir = os.path.join(WORKSPACE, "data", "reports")
-    if not os.path.isdir(reports_dir):
-        os.makedirs(reports_dir, exist_ok=True)
-        print("  ↩ No reports directory")
-        return
-
-    archive_dir = os.path.join(reports_dir, "archive")
-    os.makedirs(archive_dir, exist_ok=True)
-
-    files = sorted(f for f in os.listdir(reports_dir) if f.endswith(".json"))
-    if not files:
-        print("  ↩ No pending reports")
-        return
-
-    count = 0
-    for fname in files:
-        fpath = os.path.join(reports_dir, fname)
-        try:
-            with open(fpath) as f:
-                report = json.load(f)
-        except Exception as e:
-            print(f"  ⚠ Bad JSON in {fname}: {e}")
-            continue
-
-        # Validate required fields
-        required = ["agent", "reportType", "date", "title", "summary", "content"]
-        if not all(k in report for k in required):
-            missing = [k for k in required if k not in report]
-            print(f"  ⚠ {fname} missing fields: {missing}")
-            continue
-
-        # Build reportId if not present
-        if "reportId" not in report:
-            report["reportId"] = (
-                f"{report['agent']}-{report['reportType']}-{report['date']}"
-            )
-
-        # Ensure deliveredTo exists
-        if "deliveredTo" not in report:
-            report["deliveredTo"] = []
-
-        # Truncate content for Convex limits
-        content = report["content"]
-        overflow = None
-        if len(content) > 4000:
-            overflow = content[4000:]
-            content = content[:4000]
-
-        args = {
-            "reportId": report["reportId"],
-            "agent": report["agent"],
-            "reportType": report["reportType"],
-            "date": report["date"],
-            "title": report["title"],
-            "summary": report["summary"][:500],
-            "content": content,
-            "deliveredTo": report["deliveredTo"],
-        }
-        if overflow:
-            args["contentOverflow"] = overflow[:4000]
-        if report.get("metrics"):
-            args["metrics"] = report["metrics"]
-
-        result = convex_mutation("reports:upsertReport", args)
-        if result and result.get("status") != "error":
-            # Archive processed file
-            os.rename(fpath, os.path.join(archive_dir, fname))
-            count += 1
-        else:
-            print(f"  ⚠ Failed to sync {fname}")
-
-    print(f"  ✓ Synced {count} reports ({len(files)} found)")
+    print(f"  ✓ Synced {count} weekly reports")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Sync data to Convex.")
     parser.add_argument(
         "--only",
-        help="Comma-separated list: health,tes,weed,trading,meal_log,meal_plan,cron,weekly,reports",
+        help="Comma-separated list: health,tes,weed,trading,meal_log,meal_plan,chef_brief,cron,weekly",
     )
     args = parser.parse_args()
 
@@ -1304,14 +1307,14 @@ def main():
         sync_meal_log(state)
     if not selected or "meal_plan" in selected:
         sync_meals(state)
+    if not selected or "chef_brief" in selected:
+        sync_chef_daily_brief(state)
     if not selected or "cron" in selected:
         sync_cron(state)
     if not selected or "trade_log" in selected:
         sync_trade_log(state)
     if not selected or "weekly" in selected:
         sync_weekly_reports(state)
-    if not selected or "reports" in selected:
-        sync_reports(state)
 
     after = json.dumps(state, sort_keys=True)
     if before != after:

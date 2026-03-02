@@ -80,12 +80,76 @@ export const upsertMealPlan = mutation({
   },
 });
 
+export const upsertDailyMeals = mutation({
+  args: {
+    date: v.string(),
+    domain: v.string(),
+    meals: v.array(v.object({
+      name: v.string(),
+      items: v.string(),
+      kcal: v.number(),
+      protein: v.number(),
+      carbs: v.number(),
+      fat: v.number(),
+    })),
+    totalKcal: v.number(),
+    totalProtein: v.number(),
+    totalCarbs: v.number(),
+    totalFat: v.number(),
+    isAdjusted: v.optional(v.boolean()),
+    adjustmentReason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("dailyAdjustedMeals")
+      .withIndex("by_domain_date", (q) => q.eq("domain", args.domain).eq("date", args.date))
+      .first();
+    const data = { ...args, updatedAt: Date.now() };
+    if (existing) {
+      await ctx.db.patch(existing._id, data);
+    } else {
+      await ctx.db.insert("dailyAdjustedMeals", data);
+    }
+  },
+});
+
+export const getTodayAdjustedMeals = query({
+  args: { date: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("dailyAdjustedMeals")
+      .withIndex("by_domain_date", (q) => q.eq("domain", "chef").eq("date", args.date))
+      .first();
+  },
+});
+
 export const getLatestMealPlan = query({
   handler: async (ctx) => {
     return await ctx.db
       .query("mealPlan")
       .withIndex("by_weekLabel")
       .order("desc")
+      .first();
+  },
+});
+
+export const listMealPlanWeeks = query({
+  handler: async (ctx) => {
+    const plans = await ctx.db
+      .query("mealPlan")
+      .withIndex("by_weekLabel")
+      .order("desc")
+      .take(12);
+    return plans.map((p) => p.weekLabel);
+  },
+});
+
+export const getMealPlanByWeek = query({
+  args: { weekLabel: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("mealPlan")
+      .withIndex("by_weekLabel", (q) => q.eq("weekLabel", args.weekLabel))
       .first();
   },
 });

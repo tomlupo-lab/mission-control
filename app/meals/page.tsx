@@ -2,7 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback } from "react";
 import { UtensilsCrossed, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -50,7 +50,7 @@ function ComparisonBar({ planned, actual, target, color, label }: { planned: num
   );
 }
 
-function DayView({ day, loggedMeals, isToday }: { day: any; loggedMeals: any[]; isToday: boolean }) {
+function DayView({ day, loggedMeals, isToday, adjustedPlan }: { day: any; loggedMeals: any[]; isToday: boolean; adjustedPlan?: any }) {
   const hasLog = loggedMeals.length > 0;
 
   const logTotals = loggedMeals.reduce((acc, m) => ({
@@ -69,40 +69,61 @@ function DayView({ day, loggedMeals, isToday }: { day: any; loggedMeals: any[]; 
 
   return (
     <div style={{ minHeight: 200 }}>
-      {/* Day kcal summary */}
-      <div className="animate-in" style={{ textAlign: "center", marginBottom: "var(--space-xl)" }}>
-        <div style={{ fontSize: "2.2rem", fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
-          {hasLog ? (
-            <span style={{
-              color: logTotals.kcal > day.totalKcal * 1.1 ? "var(--orange)" : "var(--green)",
-              textShadow: logTotals.kcal <= day.totalKcal * 1.1 ? "0 0 14px rgba(16,185,129,0.3)" : "0 0 14px rgba(245,158,11,0.3)",
-            }}>
-              {Math.round(logTotals.kcal)}
-            </span>
-          ) : (
-            <span style={{ color: "var(--muted-hex)" }}>{day.totalKcal}</span>
-          )}
-          <span style={{ fontSize: "0.9rem", color: "var(--muted-hex)", fontWeight: 400, fontFamily: "'Exo 2', sans-serif" }}> / {day.totalKcal} kcal</span>
+      {/* Adjustment banner */}
+      {isToday && adjustedPlan?.isAdjusted && adjustedPlan.adjustmentReason && (
+        <div className="animate-in" style={{
+          padding: "8px 14px", marginBottom: "var(--space-lg)",
+          background: "rgba(245, 158, 11, 0.08)", border: "1px solid rgba(245, 158, 11, 0.2)",
+          borderRadius: "var(--radius-md)", fontSize: "0.72rem", color: "var(--orange)", fontWeight: 600,
+        }}>
+          ⚡ Adjusted: {adjustedPlan.adjustmentReason}
         </div>
-        {day.isFish && <span style={{ fontSize: "0.75rem" }}>🐟 Fish day</span>}
-      </div>
+      )}
+
+      {/* Day kcal summary */}
+      {(() => {
+        const planKcal = (isToday && adjustedPlan) ? adjustedPlan.totalKcal : day.totalKcal;
+        return (
+          <div className="animate-in" style={{ textAlign: "center", marginBottom: "var(--space-xl)" }}>
+            <div style={{ fontSize: "2.2rem", fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
+              {hasLog ? (
+                <span style={{
+                  color: logTotals.kcal > planKcal * 1.1 ? "var(--orange)" : "var(--green)",
+                  textShadow: logTotals.kcal <= planKcal * 1.1 ? "0 0 14px rgba(16,185,129,0.3)" : "0 0 14px rgba(245,158,11,0.3)",
+                }}>
+                  {Math.round(logTotals.kcal)}
+                </span>
+              ) : (
+                <span style={{ color: "var(--muted-hex)" }}>{planKcal}</span>
+              )}
+              <span style={{ fontSize: "0.9rem", color: "var(--muted-hex)", fontWeight: 400, fontFamily: "'Exo 2', sans-serif" }}> / {planKcal} kcal</span>
+            </div>
+            {day.isFish && <span style={{ fontSize: "0.75rem" }}>🐟 Fish day</span>}
+          </div>
+        );
+      })()}
 
       {/* Macro bars */}
-      <div className="animate-in" style={{ display: "flex", gap: 12, marginBottom: "var(--space-xl)", animationDelay: "0.05s" }}>
-        {hasLog ? (
-          <>
-            <ComparisonBar planned={day.totalCarbs} actual={Math.round(logTotals.carbs)} target={230} color="var(--cyan)" label="Carbs" />
-            <ComparisonBar planned={day.totalProtein} actual={Math.round(logTotals.protein)} target={100} color="var(--green)" label="Protein" />
-            <ComparisonBar planned={day.totalFat} actual={Math.round(logTotals.fat)} target={60} color="var(--orange)" label="Fat" />
-          </>
-        ) : (
-          <>
-            <MacroBar value={day.totalCarbs} target={230} color="var(--cyan)" label="Carbs" />
-            <MacroBar value={day.totalProtein} target={100} color="var(--green)" label="Protein" />
-            <MacroBar value={day.totalFat} target={60} color="var(--orange)" label="Fat" />
-          </>
-        )}
-      </div>
+      {(() => {
+        const planRef = (isToday && adjustedPlan) ? adjustedPlan : day;
+        return (
+          <div className="animate-in" style={{ display: "flex", gap: 12, marginBottom: "var(--space-xl)", animationDelay: "0.05s" }}>
+            {hasLog ? (
+              <>
+                <ComparisonBar planned={planRef.totalCarbs} actual={Math.round(logTotals.carbs)} target={230} color="var(--cyan)" label="Carbs" />
+                <ComparisonBar planned={planRef.totalProtein} actual={Math.round(logTotals.protein)} target={100} color="var(--green)" label="Protein" />
+                <ComparisonBar planned={planRef.totalFat} actual={Math.round(logTotals.fat)} target={60} color="var(--orange)" label="Fat" />
+              </>
+            ) : (
+              <>
+                <MacroBar value={planRef.totalCarbs} target={230} color="var(--cyan)" label="Carbs" />
+                <MacroBar value={planRef.totalProtein} target={100} color="var(--green)" label="Protein" />
+                <MacroBar value={planRef.totalFat} target={60} color="var(--orange)" label="Fat" />
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Logged meals */}
       {hasLog && (
@@ -133,42 +154,84 @@ function DayView({ day, loggedMeals, isToday }: { day: any; loggedMeals: any[]; 
         </Card>
       )}
 
-      {/* Planned meals */}
-      <Card className="animate-in" style={{ animationDelay: hasLog ? "0.15s" : "0.1s" }}>
-        <CardContent style={{ padding: "var(--space-lg) var(--space-xl)" }}>
-          <div style={{ fontSize: "0.7rem", fontWeight: 700, color: hasLog ? "var(--muted-hex)" : "var(--accent-hex)", marginBottom: 10, textTransform: "uppercase", letterSpacing: "1px" }}>
-            📋 {hasLog ? "Planned" : "Plan"}
-          </div>
-          {day.meals.map((meal: any, i: number) => (
-            <div key={i} style={{ padding: "8px 0", borderBottom: i < day.meals.length - 1 ? "1px solid var(--border-subtle)" : "none" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>
-                  {getMealEmoji(meal.name)} {meal.name}
-                </span>
-                <span style={{ fontSize: "0.75rem", color: "var(--muted-hex)", fontFamily: "'JetBrains Mono', monospace" }}>{meal.kcal}</span>
+      {/* Planned meals — use adjusted brief for today if available */}
+      {(() => {
+        const planMeals = (isToday && adjustedPlan?.meals?.length) ? adjustedPlan.meals : day.meals;
+        const isAdjustedView = isToday && adjustedPlan?.meals?.length;
+        const planLabel = isAdjustedView
+          ? (adjustedPlan.isAdjusted ? "⚡ Today (Adjusted)" : "📋 Today")
+          : hasLog ? "Planned" : "Plan";
+        const planColor = isAdjustedView && adjustedPlan.isAdjusted
+          ? "var(--orange)"
+          : hasLog ? "var(--muted-hex)" : "var(--accent-hex)";
+        return (
+          <Card className="animate-in" style={{ animationDelay: hasLog ? "0.15s" : "0.1s" }}>
+            <CardContent style={{ padding: "var(--space-lg) var(--space-xl)" }}>
+              <div style={{ fontSize: "0.7rem", fontWeight: 700, color: planColor, marginBottom: 10, textTransform: "uppercase", letterSpacing: "1px" }}>
+                {!isAdjustedView && "📋 "}{planLabel}
               </div>
-              {meal.items && (
-                <div style={{ fontSize: "0.7rem", color: "var(--muted-hex)", marginTop: 3 }}>{meal.items}</div>
+              {planMeals.map((meal: any, i: number) => (
+                <div key={i} style={{ padding: "8px 0", borderBottom: i < planMeals.length - 1 ? "1px solid var(--border-subtle)" : "none" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>
+                      {getMealEmoji(meal.name)} {meal.name}
+                    </span>
+                    <span style={{ fontSize: "0.75rem", color: "var(--muted-hex)", fontFamily: "'JetBrains Mono', monospace" }}>{meal.kcal}</span>
+                  </div>
+                  {meal.items && (
+                    <div style={{ fontSize: "0.7rem", color: "var(--muted-hex)", marginTop: 3 }}>{meal.items}</div>
+                  )}
+                  <div style={{ display: "flex", gap: 14, marginTop: 4, fontSize: "0.65rem", fontFamily: "'JetBrains Mono', monospace" }}>
+                    <span style={{ color: "var(--cyan)" }}>C:{meal.carbs}g</span>
+                    <span style={{ color: "var(--green)" }}>P:{meal.protein}g</span>
+                    <span style={{ color: "var(--orange)" }}>F:{meal.fat}g</span>
+                  </div>
+                </div>
+              ))}
+              {day.note && (
+                <div style={{ fontSize: "0.7rem", color: "var(--orange)", marginTop: 12 }}>⚠️ {day.note}</div>
               )}
-              <div style={{ display: "flex", gap: 14, marginTop: 4, fontSize: "0.65rem", fontFamily: "'JetBrains Mono', monospace" }}>
-                <span style={{ color: "var(--cyan)" }}>C:{meal.carbs}g</span>
-                <span style={{ color: "var(--green)" }}>P:{meal.protein}g</span>
-                <span style={{ color: "var(--orange)" }}>F:{meal.fat}g</span>
-              </div>
-            </div>
-          ))}
-          {day.note && (
-            <div style={{ fontSize: "0.7rem", color: "var(--orange)", marginTop: 12 }}>⚠️ {day.note}</div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        );
+      })()}
     </div>
   );
 }
 
+const MONTH_MAP: Record<string, string> = {
+  Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
+  Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
+};
+
+function formatWeekRange(weekLabel: string): string {
+  // weekLabel is YYYY-MM-DD (Monday)
+  try {
+    const start = new Date(weekLabel + "T12:00:00");
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const fmt = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    return `${fmt(start)} – ${fmt(end)}`;
+  } catch {
+    return weekLabel;
+  }
+}
+
 export default function MealsPage() {
-  const mealPlan = useQuery(api.meals.getLatestMealPlan);
-  const mealLog = useQuery(api.meals.getMealLog, { days: 7 });
+  const weeks = useQuery(api.meals.listMealPlanWeeks);
+  const [weekIdx, setWeekIdx] = useState(0); // 0 = latest
+  const [currentIdx, setCurrentIdx] = useState(0);
+
+  const selectedWeek = weeks?.[weekIdx] ?? "";
+  const mealPlan = useQuery(
+    api.meals.getMealPlanByWeek,
+    selectedWeek ? { weekLabel: selectedWeek } : "skip"
+  );
+  const mealLog = useQuery(api.meals.getMealLog, { days: 30 });
+  const todayDateStr = new Date().toISOString().slice(0, 10);
+  const adjustedMeals = useQuery(api.meals.getTodayAdjustedMeals, { date: todayDateStr });
+
+  const isCurrentWeek = weekIdx === 0;
 
   const logByDate: Record<string, any[]> = {};
   for (const m of (mealLog ?? [])) {
@@ -181,12 +244,16 @@ export default function MealsPage() {
 
   const planDays = mealPlan?.days ?? [];
 
-  const todayIdx = planDays.findIndex((d: any) =>
-    todayStr.toLowerCase().includes(d.day.split(" ")[0].toLowerCase())
-  );
-  const [currentIdx, setCurrentIdx] = useState(todayIdx >= 0 ? todayIdx : 0);
+  const todayIdx = isCurrentWeek
+    ? planDays.findIndex((d: any) => todayStr.toLowerCase().includes(d.day.split(" ")[0].toLowerCase()))
+    : -1;
 
-  const resolvedIdx = todayIdx >= 0 ? todayIdx : 0;
+  // Reset day index when week changes, jump to today if current week
+  const prevWeekIdx = useRef(weekIdx);
+  if (prevWeekIdx.current !== weekIdx) {
+    prevWeekIdx.current = weekIdx;
+    setCurrentIdx(todayIdx >= 0 ? todayIdx : 0);
+  }
 
   const logDays = Object.values(logByDate);
   const avg7d = logDays.length ? {
@@ -212,15 +279,29 @@ export default function MealsPage() {
   }, [currentIdx, planDays.length]);
 
   const currentDay = planDays[currentIdx];
-  const isToday = currentDay && todayStr.toLowerCase().includes(currentDay.day.split(" ")[0].toLowerCase());
+  const isToday = isCurrentWeek && currentDay &&
+    todayStr.toLowerCase().includes(currentDay.day.split(" ")[0].toLowerCase());
 
+  // Derive date string from weekLabel + day name for meal log lookup
   let currentLoggedMeals: any[] = [];
-  if (currentDay) {
-    const dayParts = currentDay.day.match(/(\d+)\s+(\w+)/);
-    if (dayParts) {
-      const monthMap: Record<string, string> = { Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06", Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12" };
-      const dateStr = `2026-${monthMap[dayParts[2]] || "01"}-${dayParts[1].padStart(2, "0")}`;
+  if (currentDay && selectedWeek) {
+    // selectedWeek = YYYY-MM-DD (Monday), compute offset from day name
+    const DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+    const dayName = currentDay.day.split(" ")[0].toLowerCase();
+    const offset = DAY_NAMES.indexOf(dayName);
+    if (offset >= 0) {
+      const base = new Date(selectedWeek + "T12:00:00");
+      base.setDate(base.getDate() + offset);
+      const dateStr = base.toISOString().slice(0, 10);
       currentLoggedMeals = logByDate[dateStr] || [];
+    } else {
+      // Fallback: parse "15 Mar" style day label
+      const dayParts = currentDay.day.match(/(\d+)\s+(\w+)/);
+      if (dayParts) {
+        const year = selectedWeek.slice(0, 4);
+        const dateStr = `${year}-${MONTH_MAP[dayParts[2]] || "01"}-${dayParts[1].padStart(2, "0")}`;
+        currentLoggedMeals = logByDate[dateStr] || [];
+      }
     }
   }
 
@@ -267,8 +348,40 @@ export default function MealsPage() {
         )}
       </div>
 
+      {/* Week navigator */}
+      {weeks && weeks.length > 1 && (
+        <div className="animate-in" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: "var(--space-lg)" }}>
+          <button
+            onClick={() => { setWeekIdx(weekIdx + 1); setCurrentIdx(0); }}
+            disabled={weekIdx >= (weeks?.length ?? 1) - 1}
+            style={{
+              background: "none", border: "none", cursor: weekIdx < (weeks?.length ?? 1) - 1 ? "pointer" : "default",
+              color: weekIdx < (weeks?.length ?? 1) - 1 ? "var(--muted-hex)" : "rgba(100,100,100,0.3)",
+              padding: 6, borderRadius: 6, transition: "color 0.2s", fontSize: "1.1rem",
+            }}
+          >‹</button>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "0.7rem", fontWeight: 700, color: isCurrentWeek ? "var(--accent-hex)" : "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "1px" }}>
+              {isCurrentWeek ? "This Week" : "Past Week"}
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: 2 }}>
+              {selectedWeek ? formatWeekRange(selectedWeek) : "—"}
+            </div>
+          </div>
+          <button
+            onClick={() => { setWeekIdx(weekIdx - 1); setCurrentIdx(0); }}
+            disabled={weekIdx === 0}
+            style={{
+              background: "none", border: "none", cursor: weekIdx > 0 ? "pointer" : "default",
+              color: weekIdx > 0 ? "var(--muted-hex)" : "rgba(100,100,100,0.3)",
+              padding: 6, borderRadius: 6, transition: "color 0.2s", fontSize: "1.1rem",
+            }}
+          >›</button>
+        </div>
+      )}
+
       {/* Stale plan warning */}
-      {planDays.length > 0 && todayIdx < 0 && (
+      {planDays.length > 0 && isCurrentWeek && todayIdx < 0 && (
         <div className="animate-in" style={{
           padding: "10px 16px", marginBottom: "var(--space-lg)",
           background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)",
@@ -345,7 +458,7 @@ export default function MealsPage() {
             onTouchEnd={handleTouchEnd}
             style={{ touchAction: "pan-y" }}
           >
-            <DayView day={currentDay} loggedMeals={currentLoggedMeals} isToday={!!isToday} />
+            <DayView day={currentDay} loggedMeals={currentLoggedMeals} isToday={!!isToday} adjustedPlan={isToday ? adjustedMeals : undefined} />
           </div>
         </>
       )}

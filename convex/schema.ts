@@ -171,6 +171,28 @@ export default defineSchema({
     .index("by_date", ["date"])
     .index("by_strategy_date", ["strategyId", "date"]),
 
+  dailyAdjustedMeals: defineTable({
+    date: v.string(),
+    domain: v.string(),
+    meals: v.array(v.object({
+      name: v.string(),
+      items: v.string(),
+      kcal: v.number(),
+      protein: v.number(),
+      carbs: v.number(),
+      fat: v.number(),
+    })),
+    totalKcal: v.number(),
+    totalProtein: v.number(),
+    totalCarbs: v.number(),
+    totalFat: v.number(),
+    isAdjusted: v.optional(v.boolean()),
+    adjustmentReason: v.optional(v.string()),
+    updatedAt: v.number(),
+  })
+    .index("by_date", ["date"])
+    .index("by_domain_date", ["domain", "date"]),
+
   reports: defineTable({
     reportId: v.string(),
     agent: v.string(),
