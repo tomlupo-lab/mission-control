@@ -204,10 +204,30 @@ const MONTH_MAP: Record<string, string> = {
   Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
 };
 
+/** Parse any weekLabel format into a YYYY-MM-DD Monday string, or null. */
+function weekLabelToDate(weekLabel: string): string | null {
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(weekLabel)) return weekLabel;
+  // "Week of Mar 2" or "Week of Mar 2 2026"
+  const m1 = weekLabel.match(/week of\s+([a-z]+)\s+(\d{1,2})(?:\s+(\d{4}))?/i);
+  if (m1) {
+    const mon = MONTH_MAP[m1[1].slice(0, 3)];
+    const yr = m1[3] || String(new Date().getFullYear());
+    if (mon) return `${yr}-${mon}-${m1[2].padStart(2, "0")}`;
+  }
+  // "Week of 23 Feb 2026"
+  const m2 = weekLabel.match(/week of\s+(\d{1,2})\s+([a-z]+)\s+(\d{4})/i);
+  if (m2) {
+    const mon = MONTH_MAP[m2[2].slice(0, 3)];
+    if (mon) return `${m2[3]}-${mon}-${m2[1].padStart(2, "0")}`;
+  }
+  return null;
+}
+
 function formatWeekRange(weekLabel: string): string {
-  // weekLabel must be YYYY-MM-DD (Monday)
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekLabel)) return weekLabel;
-  const start = new Date(weekLabel + "T12:00:00");
+  const iso = weekLabelToDate(weekLabel);
+  if (!iso) return weekLabel;
+  const start = new Date(iso + "T12:00:00");
   if (isNaN(start.getTime())) return weekLabel;
   const end = new Date(start);
   end.setDate(end.getDate() + 6);
@@ -288,8 +308,9 @@ export default function MealsPage() {
     const DAY_ABBREV = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
     const dayName = currentDay.day.split(" ")[0].toLowerCase();
     const offset = DAY_NAMES.indexOf(dayName) >= 0 ? DAY_NAMES.indexOf(dayName) : DAY_ABBREV.indexOf(dayName);
-    if (offset >= 0 && /^\d{4}-\d{2}-\d{2}$/.test(selectedWeek)) {
-      const base = new Date(selectedWeek + "T12:00:00");
+    const weekIso = weekLabelToDate(selectedWeek);
+    if (offset >= 0 && weekIso) {
+      const base = new Date(weekIso + "T12:00:00");
       if (!isNaN(base.getTime())) {
         base.setDate(base.getDate() + offset);
         const dateStr = base.toISOString().slice(0, 10);
