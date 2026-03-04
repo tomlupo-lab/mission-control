@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Heart, TrendingUp, UtensilsCrossed, Gamepad2, FileText, Settings } from "lucide-react";
+import { LayoutDashboard, Heart, TrendingUp, UtensilsCrossed, Gamepad2, FileText, Settings, Bell } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Dashboard", Icon: LayoutDashboard },
+  { href: "/feed", label: "Feed", Icon: Bell },
   { href: "/health", label: "Health", Icon: Heart },
   { href: "/trading", label: "Trading", Icon: TrendingUp },
   { href: "/meals", label: "Meals", Icon: UtensilsCrossed },

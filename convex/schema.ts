@@ -193,6 +193,21 @@ export default defineSchema({
     .index("by_date", ["date"])
     .index("by_domain_date", ["domain", "date"]),
 
+  feedItems: defineTable({
+    source: v.string(),
+    category: v.string(),
+    title: v.string(),
+    body: v.optional(v.string()),
+    actionUrl: v.optional(v.string()),
+    actionLabel: v.optional(v.string()),
+    read: v.boolean(),
+    pinned: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_createdAt", ["createdAt"])
+    .index("by_category", ["category", "createdAt"])
+    .index("by_read", ["read", "createdAt"]),
+
   reports: defineTable({
     reportId: v.string(),
     agent: v.string(),
