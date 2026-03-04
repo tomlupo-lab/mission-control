@@ -11,7 +11,9 @@
 import type * as activities from "../activities.js";
 import type * as agents from "../agents.js";
 import type * as cron from "../cron.js";
+import type * as feed from "../feed.js";
 import type * as health from "../health.js";
+import type * as http from "../http.js";
 import type * as meals from "../meals.js";
 import type * as reports from "../reports.js";
 import type * as tes from "../tes.js";
@@ -29,7 +31,9 @@ declare const fullApi: ApiFromModules<{
   activities: typeof activities;
   agents: typeof agents;
   cron: typeof cron;
+  feed: typeof feed;
   health: typeof health;
+  http: typeof http;
   meals: typeof meals;
   reports: typeof reports;
   tes: typeof tes;

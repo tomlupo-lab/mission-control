@@ -1275,6 +1275,38 @@ def sync_weekly_reports(state: dict):
     print(f"  ✓ Synced {count} weekly reports")
 
 
+def sync_activities(state: dict):
+    """Sync recent activities from Garmin."""
+    print("🏃 Syncing activities...")
+    data = fetch_api_bridge("/garmin/activities?count=10")
+    if not data or not isinstance(data, list):
+        print("  ⚠ No activities data")
+        return
+
+    count = 0
+    for act in data:
+        name = act.get("activityName", "")
+        atype = act.get("activityType", {}).get("typeKey", "unknown") if isinstance(act.get("activityType"), dict) else str(act.get("activityType", "unknown"))
+        start = act.get("startTimeLocal", "")
+        date = start[:10] if start else ""
+        if not date:
+            continue
+        duration_secs = act.get("duration", 0) or 0
+        args = {
+            "date": date,
+            "type": atype,
+            "name": name or atype,
+            "duration": round(duration_secs / 60) if duration_secs else None,
+            "calories": act.get("calories"),
+            "distance": round((act.get("distance", 0) or 0) / 1000, 2) if act.get("distance") else None,
+            "source": "garmin",
+        }
+        args = {k: v for k, v in args.items() if v is not None}
+        convex_mutation("activities:upsertActivity", args)
+        count += 1
+    print(f"  ✓ Synced {count} activities")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Sync data to Convex.")
     parser.add_argument(
@@ -1313,6 +1345,8 @@ def main():
         sync_cron(state)
     if not selected or "trade_log" in selected:
         sync_trade_log(state)
+    if not selected or "activities" in selected:
+        sync_activities(state)
     if not selected or "weekly" in selected:
         sync_weekly_reports(state)
 

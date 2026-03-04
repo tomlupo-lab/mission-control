@@ -2,102 +2,94 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import Link from "next/link";
 
-interface FeedItem {
-  id: string;
-  time: number;
-  status: "ok" | "error" | "warn";
-  label: string;
-  detail: string;
+const CATEGORY_COLORS: Record<string, string> = {
+  chef: "#f59e0b", coach: "#10b981", trading: "#06b6d4",
+  research: "#8b5cf6", marco: "#e8853d", system: "#6b7f99",
+  rss: "#10b981", briefing: "#06b6d4",
+};
+
+function getCatColor(cat: string): string {
+  const key = cat.toLowerCase();
+  for (const [k, v] of Object.entries(CATEGORY_COLORS)) {
+    if (key.includes(k)) return v;
+  }
+  return "#6b7f99";
 }
 
 function timeAgo(ts: number): string {
   const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
 }
 
 export default function ActivityFeed() {
-  const cronJobs = useQuery(api.cron.getCronJobs);
-  const reports = useQuery(api.reports.listReports, { limit: 5 });
-  const trades = useQuery(api.trading.getRecentTrades, { limit: 5 });
-
-  const items: FeedItem[] = [];
-
-  (cronJobs ?? []).forEach((j: any) => {
-    if (j.lastRun) {
-      items.push({
-        id: `cron-${j.name}`,
-        time: j.lastRun,
-        status: j.lastStatus === "ok" ? "ok" : j.lastStatus === "error" ? "error" : "warn",
-        label: `Cron: ${j.name}`,
-        detail: j.lastStatus === "ok" ? "Completed" : j.lastStatus || "unknown",
-      });
-    }
-  });
-
-  (reports ?? []).forEach((r: any) => {
-    items.push({
-      id: `report-${r._id}`,
-      time: r._creationTime || Date.now(),
-      status: "ok",
-      label: `Report: ${r.title}`,
-      detail: r.agent || "system",
-    });
-  });
-
-  (trades ?? []).forEach((t: any) => {
-    const pnl = t.pnl ?? 0;
-    items.push({
-      id: `trade-${t._id}`,
-      time: t.timestamp || t._creationTime || Date.now(),
-      status: pnl >= 0 ? "ok" : "error",
-      label: `${t.side?.toUpperCase() || "TRADE"} ${t.symbol}`,
-      detail: `${t.size ?? ""} @ $${t.price?.toFixed(2) ?? "—"}`,
-    });
-  });
-
-  items.sort((a, b) => b.time - a.time);
-  const display = items.slice(0, 15);
-
-  if (display.length === 0) {
-    return (
-      <div className="animate-in" style={{
-        background: "var(--glass-bg)", backdropFilter: "blur(16px)",
-        border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)",
-        padding: "var(--space-xl)",
-      }}>
-        <h2 style={{ margin: 0, marginBottom: "var(--space-lg)", fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "1.5px" }}>⚡ Activity Feed</h2>
-        <div className="meta">No recent activity</div>
-      </div>
-    );
-  }
+  const items = useQuery(api.feed.list, { limit: 10 });
+  const unread = useQuery(api.feed.unreadCount);
 
   return (
     <div className="animate-in" style={{
       background: "var(--glass-bg)", backdropFilter: "blur(16px)",
       border: "1px solid var(--glass-border)", borderRadius: "var(--radius-lg)",
-      padding: "var(--space-xl)",
-      animationDelay: "0.1s",
+      padding: "var(--space-xl)", animationDelay: "0.1s",
     }}>
-      <h2 style={{ margin: 0, marginBottom: "var(--space-lg)", fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "1.5px" }}>⚡ Activity Feed</h2>
-      <div className="activity-feed">
-        {display.map((item) => (
-          <div key={item.id} className="activity-item">
-            <span className={`activity-dot status-dot ${item.status === "ok" ? "status-ok" : item.status === "error" ? "status-error" : "status-pending"}`} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</div>
-              <div className="meta" style={{ fontSize: "var(--text-xs)" }}>{item.detail}</div>
-            </div>
-            <span className="activity-time">{timeAgo(item.time)}</span>
-          </div>
-        ))}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-lg)" }}>
+        <h2 style={{ margin: 0, fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "1.5px" }}>
+          🔔 Feed
+        </h2>
+        <Link href="/feed" style={{
+          fontSize: "0.6rem", color: "var(--accent-hex)", textDecoration: "none",
+          textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 700,
+          display: "flex", alignItems: "center", gap: 4,
+        }}>
+          {(unread ?? 0) > 0 && (
+            <span style={{
+              padding: "1px 6px", background: "rgba(16,185,129,0.15)", borderRadius: 8,
+              fontSize: "0.55rem", border: "1px solid rgba(16,185,129,0.25)",
+            }}>{unread}</span>
+          )}
+          View all →
+        </Link>
       </div>
+      {(items ?? []).length === 0 ? (
+        <div className="meta">No items yet</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {(items ?? []).map((item) => {
+            const color = getCatColor(item.category);
+            return (
+              <div key={item._id} style={{
+                display: "flex", alignItems: "center", gap: "var(--space-md)",
+                padding: "8px 0", borderBottom: "1px solid rgba(40,56,82,0.25)",
+              }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                  background: item.read ? "var(--muted-hex)" : color,
+                  boxShadow: item.read ? "none" : `0 0 6px ${color}80`,
+                }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: "var(--text-sm)", fontWeight: item.read ? 400 : 600,
+                    color: item.read ? "var(--text-secondary)" : "var(--text)",
+                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  }}>{item.title}</div>
+                  <div style={{ fontSize: "var(--text-xs)", color: "var(--muted-hex)" }}>
+                    {item.category.replace(/^[^\w]*\s*/, "")}
+                  </div>
+                </div>
+                <span style={{ fontSize: "var(--text-xs)", color: "var(--muted-hex)", fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap" }}>
+                  {timeAgo(item.createdAt)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

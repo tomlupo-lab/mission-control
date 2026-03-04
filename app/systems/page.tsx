@@ -2,7 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Settings, CheckCircle, AlertTriangle, Clock, FileText } from "lucide-react";
+import { Settings, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 
@@ -31,7 +31,7 @@ type CronFilter = "all" | "errors" | "ok";
 export default function OpsPage() {
   const cronJobs = useQuery(api.cron.getCronJobs);
   const health = useQuery(api.health.getLatestHealth);
-  const reports = useQuery(api.reports.listReports, { limit: 10 });
+  
   const [cronFilter, setCronFilter] = useState<CronFilter>("all");
 
   const jobs = cronJobs ?? [];
@@ -77,28 +77,6 @@ export default function OpsPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Recent Reports */}
-      {reports && reports.length > 0 && (
-        <Card className="animate-in" style={{ marginBottom: "var(--space-lg)", animationDelay: "0.2s" }}>
-          <CardHeader><CardTitle><FileText size={16} style={{ marginRight: 6 }} />Recent Reports</CardTitle></CardHeader>
-          <CardContent>
-            {reports.map((r: any) => (
-              <div key={r.reportId} className="row-item">
-                <span style={{ fontSize: "1.1rem" }}>{AGENT_EMOJI[r.agent] || "📄"}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {r.title}
-                  </div>
-                  <div className="meta" style={{ fontSize: "var(--text-xs)" }}>
-                    {r.agent} · {r.reportType} · {r.date}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Cron Jobs */}
       <Card className="animate-in" style={{ marginBottom: "var(--space-lg)", animationDelay: "0.25s" }}>
