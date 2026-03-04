@@ -2,148 +2,192 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-import { ExternalLink, Check, CheckCheck, Pin, Filter } from "lucide-react";
+import { ExternalLink, Pin, Filter, CheckCheck, Bell } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 
 const CATEGORY_CONFIG: Record<string, { emoji: string; color: string }> = {
-  "🍽️ chef": { emoji: "🍽️", color: "var(--orange)" },
-  "🏋️ coach": { emoji: "🏋️", color: "var(--green)" },
-  "💰 trading": { emoji: "💰", color: "var(--cyan)" },
-  "🔬 research": { emoji: "🔬", color: "var(--purple)" },
-  "🇮🇹 marco": { emoji: "🇮🇹", color: "#e8853d" },
-  "🤖 system": { emoji: "🤖", color: "var(--muted-hex)" },
-  "📰 rss": { emoji: "📰", color: "var(--accent-hex)" },
-  "📋 briefing": { emoji: "📋", color: "var(--cyan)" },
+  chef: { emoji: "🍽️", color: "#f59e0b" },
+  coach: { emoji: "🏋️", color: "#10b981" },
+  trading: { emoji: "💰", color: "#06b6d4" },
+  research: { emoji: "🔬", color: "#8b5cf6" },
+  marco: { emoji: "🇮🇹", color: "#e8853d" },
+  system: { emoji: "🤖", color: "#5a6b8a" },
+  rss: { emoji: "📰", color: "#10b981" },
+  briefing: { emoji: "📋", color: "#06b6d4" },
 };
 
 function getCategoryStyle(cat: string) {
   const key = cat.toLowerCase();
   for (const [k, v] of Object.entries(CATEGORY_CONFIG)) {
-    if (key.includes(k.split(" ")[1]) || key === k) return v;
+    if (key.includes(k)) return v;
   }
-  return { emoji: "📌", color: "var(--muted-hex)" };
+  return { emoji: "📌", color: "#5a6b8a" };
 }
 
 function timeAgo(ts: number): string {
   const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "now";
-  if (mins < 60) return `${mins}m`;
+  if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
+  if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
-  return `${days}d`;
+  return `${days}d ago`;
 }
 
 function FeedItem({
   item,
   onMarkRead,
   onTogglePin,
+  delay,
 }: {
   item: any;
   onMarkRead: (id: Id<"feedItems">) => void;
   onTogglePin: (id: Id<"feedItems">) => void;
+  delay: number;
 }) {
   const style = getCategoryStyle(item.category);
   const isRead = item.read;
 
   return (
-    <Card
+    <div
       className="animate-in"
       style={{
-        marginBottom: "var(--space-sm)",
-        opacity: isRead ? 0.6 : 1,
+        animationDelay: `${delay}s`,
+        background: "var(--glass-bg)",
+        backdropFilter: "blur(16px)",
+        border: `1px solid ${isRead ? "var(--glass-border)" : `${style.color}22`}`,
         borderLeft: `3px solid ${style.color}`,
-        transition: "opacity 0.3s, transform 0.2s",
+        borderRadius: "var(--radius-lg)",
+        padding: "var(--space-lg) var(--space-xl)",
+        marginBottom: "var(--space-md)",
+        opacity: isRead ? 0.55 : 1,
         cursor: "pointer",
+        transition: "border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease, opacity 0.3s ease",
       }}
       onClick={() => {
         if (!isRead) onMarkRead(item._id);
         if (item.actionUrl) window.open(item.actionUrl, "_blank");
       }}
+      onMouseEnter={(e) => {
+        if (!isRead) {
+          (e.currentTarget as HTMLElement).style.borderColor = `${style.color}44`;
+          (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px ${style.color}15`;
+          (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.borderColor = "";
+        (e.currentTarget as HTMLElement).style.boxShadow = "";
+        (e.currentTarget as HTMLElement).style.transform = "";
+      }}
     >
-      <CardContent style={{ padding: "var(--space-md) var(--space-lg)" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-md)" }}>
-          {/* Left: category indicator */}
-          <div style={{
-            fontSize: "1.2rem",
-            lineHeight: 1,
-            paddingTop: 2,
-            filter: isRead ? "grayscale(0.5)" : "none",
-          }}>
-            {style.emoji}
-          </div>
-
-          {/* Center: content */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginBottom: 2 }}>
-              <Badge
-                variant="outline"
-                style={{
-                  fontSize: "0.55rem",
-                  padding: "1px 6px",
-                  borderColor: style.color,
-                  color: style.color,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.5px",
-                }}
-              >
-                {item.category}
-              </Badge>
-              <span className="meta" style={{ fontSize: "0.6rem" }}>
-                {item.source} · {timeAgo(item.createdAt)}
-              </span>
-              {item.pinned && <Pin size={10} style={{ color: "var(--orange)" }} />}
-            </div>
-            <div style={{
-              fontWeight: isRead ? 400 : 600,
-              fontSize: "var(--text-sm)",
-              color: isRead ? "var(--muted-hex)" : "var(--fg-hex)",
-              lineHeight: 1.4,
-            }}>
-              {item.title}
-            </div>
-            {item.body && (
-              <div className="meta" style={{
-                fontSize: "var(--text-xs)",
-                marginTop: 4,
-                lineHeight: 1.5,
-                display: "-webkit-box",
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: "vertical" as any,
-                overflow: "hidden",
-              }}>
-                {item.body}
-              </div>
-            )}
-          </div>
-
-          {/* Right: actions */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
-            {item.actionUrl && (
-              <ExternalLink size={14} style={{ color: "var(--accent-hex)", opacity: 0.7 }} />
-            )}
-            <button
-              onClick={(e) => { e.stopPropagation(); onTogglePin(item._id); }}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 2,
-                color: item.pinned ? "var(--orange)" : "var(--muted-hex)",
-                opacity: item.pinned ? 1 : 0.4,
-              }}
-              title={item.pinned ? "Unpin" : "Pin"}
-            >
-              <Pin size={12} />
-            </button>
-          </div>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-md)" }}>
+        {/* Category icon */}
+        <div style={{
+          padding: 8,
+          borderRadius: "var(--radius-md)",
+          background: `${style.color}12`,
+          color: style.color,
+          border: `1px solid ${style.color}20`,
+          fontSize: "1rem",
+          lineHeight: 1,
+          flexShrink: 0,
+        }}>
+          {style.emoji}
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", marginBottom: 4 }}>
+            <span style={{
+              padding: "2px 8px",
+              background: `${style.color}12`,
+              borderRadius: 6,
+              fontSize: "0.55rem",
+              color: style.color,
+              textTransform: "uppercase",
+              fontWeight: 700,
+              letterSpacing: "0.5px",
+              border: `1px solid ${style.color}20`,
+            }}>
+              {item.category}
+            </span>
+            <span style={{ fontSize: "0.6rem", color: "var(--muted-hex)", fontFamily: "'JetBrains Mono', monospace" }}>
+              {item.source} · {timeAgo(item.createdAt)}
+            </span>
+            {item.pinned && <Pin size={10} style={{ color: "#f59e0b", filter: "drop-shadow(0 0 4px rgba(245,158,11,0.4))" }} />}
+          </div>
+
+          <div style={{
+            fontWeight: isRead ? 400 : 600,
+            fontSize: "var(--text-sm)",
+            color: isRead ? "var(--text-secondary)" : "var(--text)",
+            lineHeight: 1.4,
+            letterSpacing: "0.2px",
+          }}>
+            {item.title}
+          </div>
+
+          {item.body && (
+            <div style={{
+              fontSize: "var(--text-xs)",
+              color: "var(--text-secondary)",
+              marginTop: 6,
+              lineHeight: 1.6,
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical" as any,
+              overflow: "hidden",
+            }}>
+              {item.body}
+            </div>
+          )}
+
+          {/* Action link pill */}
+          {item.actionUrl && (
+            <div style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              marginTop: 8,
+              padding: "3px 10px",
+              background: "rgba(14, 20, 32, 0.6)",
+              borderRadius: 6,
+              fontSize: "0.6rem",
+              color: style.color,
+              textTransform: "uppercase",
+              fontWeight: 700,
+              letterSpacing: "0.5px",
+              border: "1px solid rgba(34, 48, 74, 0.3)",
+            }}>
+              <ExternalLink size={9} />
+              {item.actionLabel || "Open"}
+            </div>
+          )}
+        </div>
+
+        {/* Pin button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onTogglePin(item._id); }}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 6,
+            color: item.pinned ? "#f59e0b" : "var(--muted-hex)",
+            opacity: item.pinned ? 1 : 0.3,
+            transition: "opacity 0.2s, color 0.2s",
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+          onMouseLeave={(e) => { if (!item.pinned) (e.currentTarget as HTMLElement).style.opacity = "0.3"; }}
+          title={item.pinned ? "Unpin" : "Pin"}
+        >
+          <Pin size={14} />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -162,143 +206,163 @@ export default function FeedPage() {
   const markAllRead = useMutation(api.feed.markAllRead);
   const togglePin = useMutation(api.feed.togglePin);
 
-  // Separate pinned items
   const pinned = (items ?? []).filter((i) => i.pinned);
   const unpinned = (items ?? []).filter((i) => !i.pinned);
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto" }}>
+    <div style={{ maxWidth: 680, margin: "0 auto" }}>
       {/* Header */}
-      <div style={{
+      <div className="page-header-compact">
+        <h1>
+          <Bell size={20} style={{ color: "#10b981", filter: "drop-shadow(0 0 6px rgba(16,185,129,0.4))" }} />
+          {" "}Feed
+          {(unreadCount ?? 0) > 0 && (
+            <span style={{
+              marginLeft: "var(--space-sm)",
+              padding: "2px 10px",
+              background: "rgba(16,185,129,0.15)",
+              borderRadius: 20,
+              fontSize: "0.7rem",
+              color: "#10b981",
+              fontWeight: 700,
+              border: "1px solid rgba(16,185,129,0.25)",
+              textShadow: "0 0 8px rgba(16,185,129,0.3)",
+            }}>
+              {unreadCount}
+            </span>
+          )}
+        </h1>
+      </div>
+
+      {/* Controls */}
+      <div className="animate-in" style={{
         display: "flex",
-        alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: "var(--space-xl)",
+        alignItems: "center",
+        marginBottom: "var(--space-lg)",
+        flexWrap: "wrap",
+        gap: "var(--space-sm)",
       }}>
-        <div>
-          <h1 style={{
-            margin: 0,
-            fontSize: "var(--text-xl)",
-            fontWeight: 700,
-            display: "flex",
-            alignItems: "center",
-            gap: "var(--space-sm)",
-          }}>
-            Feed
-            {(unreadCount ?? 0) > 0 && (
-              <Badge variant="live" style={{ fontSize: "0.65rem", padding: "2px 8px" }}>
-                {unreadCount}
-              </Badge>
-            )}
-          </h1>
+        {/* Category pills */}
+        <div style={{
+          display: "flex",
+          gap: 6,
+          overflowX: "auto",
+          paddingBottom: 2,
+        }}>
+          <button
+            onClick={() => setSelectedCategory(undefined)}
+            style={{
+              padding: "4px 14px",
+              background: !selectedCategory ? "rgba(16,185,129,0.15)" : "rgba(14, 20, 32, 0.6)",
+              border: `1px solid ${!selectedCategory ? "rgba(16,185,129,0.3)" : "rgba(34, 48, 74, 0.3)"}`,
+              borderRadius: 20,
+              color: !selectedCategory ? "#10b981" : "var(--muted-hex)",
+              cursor: "pointer",
+              fontSize: "0.65rem",
+              fontWeight: 700,
+              whiteSpace: "nowrap",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+              transition: "all 0.2s ease",
+            }}
+          >
+            All
+          </button>
+          {(categories ?? []).map((cat) => {
+            const catStyle = getCategoryStyle(cat);
+            const active = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(active ? undefined : cat)}
+                style={{
+                  padding: "4px 14px",
+                  background: active ? `${catStyle.color}18` : "rgba(14, 20, 32, 0.6)",
+                  border: `1px solid ${active ? `${catStyle.color}40` : "rgba(34, 48, 74, 0.3)"}`,
+                  borderRadius: 20,
+                  color: active ? catStyle.color : "var(--muted-hex)",
+                  cursor: "pointer",
+                  fontSize: "0.65rem",
+                  fontWeight: 700,
+                  whiteSpace: "nowrap",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {catStyle.emoji} {cat.replace(/^[^\w]*\s*/, "")}
+              </button>
+            );
+          })}
         </div>
-        <div style={{ display: "flex", gap: "var(--space-sm)" }}>
+
+        {/* Action buttons */}
+        <div style={{ display: "flex", gap: 6 }}>
           <button
             onClick={() => setShowUnreadOnly(!showUnreadOnly)}
             style={{
-              background: showUnreadOnly ? "rgba(16,185,129,0.15)" : "transparent",
-              border: `1px solid ${showUnreadOnly ? "var(--green)" : "var(--border-hex)"}`,
-              borderRadius: 6,
-              padding: "4px 10px",
-              color: showUnreadOnly ? "var(--green)" : "var(--muted-hex)",
-              cursor: "pointer",
-              fontSize: "0.7rem",
               display: "flex",
               alignItems: "center",
               gap: 4,
+              padding: "4px 12px",
+              background: showUnreadOnly ? "rgba(16,185,129,0.15)" : "rgba(14, 20, 32, 0.6)",
+              border: `1px solid ${showUnreadOnly ? "rgba(16,185,129,0.3)" : "rgba(34, 48, 74, 0.3)"}`,
+              borderRadius: 6,
+              color: showUnreadOnly ? "#10b981" : "var(--muted-hex)",
+              cursor: "pointer",
+              fontSize: "0.6rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
             }}
           >
-            <Filter size={12} />
-            Unread
+            <Filter size={11} /> Unread
           </button>
           <button
             onClick={() => markAllRead({ category: selectedCategory })}
             style={{
-              background: "transparent",
-              border: "1px solid var(--border-hex)",
-              borderRadius: 6,
-              padding: "4px 10px",
-              color: "var(--muted-hex)",
-              cursor: "pointer",
-              fontSize: "0.7rem",
               display: "flex",
               alignItems: "center",
               gap: 4,
+              padding: "4px 12px",
+              background: "rgba(14, 20, 32, 0.6)",
+              border: "1px solid rgba(34, 48, 74, 0.3)",
+              borderRadius: 6,
+              color: "var(--muted-hex)",
+              cursor: "pointer",
+              fontSize: "0.6rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
             }}
           >
-            <CheckCheck size={12} />
-            Read all
+            <CheckCheck size={11} /> Read all
           </button>
         </div>
       </div>
 
-      {/* Category pills */}
-      <div style={{
-        display: "flex",
-        gap: "var(--space-xs)",
-        marginBottom: "var(--space-lg)",
-        overflowX: "auto",
-        paddingBottom: 4,
-      }}>
-        <button
-          onClick={() => setSelectedCategory(undefined)}
-          style={{
-            background: !selectedCategory ? "var(--accent-hex)" : "transparent",
-            border: `1px solid ${!selectedCategory ? "var(--accent-hex)" : "var(--border-hex)"}`,
-            borderRadius: 20,
-            padding: "4px 14px",
-            color: !selectedCategory ? "#000" : "var(--muted-hex)",
-            cursor: "pointer",
-            fontSize: "0.7rem",
-            fontWeight: 600,
-            whiteSpace: "nowrap",
-          }}
-        >
-          All
-        </button>
-        {(categories ?? []).map((cat) => {
-          const style = getCategoryStyle(cat);
-          const active = selectedCategory === cat;
-          return (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(active ? undefined : cat)}
-              style={{
-                background: active ? style.color : "transparent",
-                border: `1px solid ${active ? style.color : "var(--border-hex)"}`,
-                borderRadius: 20,
-                padding: "4px 14px",
-                color: active ? "#000" : style.color,
-                cursor: "pointer",
-                fontSize: "0.7rem",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {cat}
-            </button>
-          );
-        })}
-      </div>
-
       {/* Pinned section */}
       {pinned.length > 0 && (
-        <div style={{ marginBottom: "var(--space-lg)" }}>
-          <div className="label" style={{
-            fontSize: "0.6rem",
-            color: "var(--orange)",
-            marginBottom: "var(--space-sm)",
+        <div style={{ marginBottom: "var(--space-xl)" }}>
+          <h3 style={{
+            fontSize: "var(--text-xs)",
+            fontWeight: 700,
+            color: "#f59e0b",
             textTransform: "uppercase",
-            letterSpacing: "1.5px",
+            letterSpacing: "2px",
+            marginBottom: "var(--space-md)",
+            filter: "drop-shadow(0 0 4px rgba(245,158,11,0.3))",
           }}>
             📌 Pinned
-          </div>
-          {pinned.map((item) => (
+          </h3>
+          {pinned.map((item, i) => (
             <FeedItem
               key={item._id}
               item={item}
               onMarkRead={(id) => markRead({ id })}
               onTogglePin={(id) => togglePin({ id })}
+              delay={0.03 * i}
             />
           ))}
         </div>
@@ -306,28 +370,65 @@ export default function FeedPage() {
 
       {/* Feed items */}
       {unpinned.length > 0 ? (
-        unpinned.map((item) => (
-          <FeedItem
-            key={item._id}
-            item={item}
-            onMarkRead={(id) => markRead({ id })}
-            onTogglePin={(id) => togglePin({ id })}
-          />
-        ))
-      ) : items !== undefined ? (
-        <Card>
-          <CardContent style={{ padding: "var(--space-2xl)", textAlign: "center" }}>
-            <div style={{ fontSize: "2rem", marginBottom: "var(--space-md)" }}>✨</div>
-            <div className="meta">
-              {showUnreadOnly ? "All caught up!" : "No items yet"}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="meta" style={{ textAlign: "center", padding: "var(--space-2xl)" }}>
-          Loading...
+        <div>
+          <h3 style={{
+            fontSize: "var(--text-xs)",
+            fontWeight: 700,
+            color: "var(--muted-hex)",
+            textTransform: "uppercase",
+            letterSpacing: "2px",
+            marginBottom: "var(--space-md)",
+          }}>
+            Recent
+          </h3>
+          {unpinned.map((item, i) => (
+            <FeedItem
+              key={item._id}
+              item={item}
+              onMarkRead={(id) => markRead({ id })}
+              onTogglePin={(id) => togglePin({ id })}
+              delay={0.03 * (i + pinned.length)}
+            />
+          ))}
         </div>
-      )}
+      ) : items !== undefined && pinned.length === 0 ? (
+        <div className="animate-in" style={{
+          background: "var(--glass-bg)",
+          backdropFilter: "blur(16px)",
+          border: "1px solid var(--glass-border)",
+          borderRadius: "var(--radius-xl)",
+          padding: "var(--space-2xl)",
+          textAlign: "center",
+        }}>
+          <div style={{ fontSize: "2rem", marginBottom: "var(--space-md)", filter: "drop-shadow(0 0 8px rgba(16,185,129,0.3))" }}>✨</div>
+          <div style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>
+            {showUnreadOnly ? "All caught up!" : "No items yet"}
+          </div>
+        </div>
+      ) : items === undefined ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="shimmer" style={{
+              height: 80,
+              borderRadius: "var(--radius-lg)",
+              animationDelay: `${i * 0.1}s`,
+            }} />
+          ))}
+        </div>
+      ) : null}
+
+      {/* Footer */}
+      <div style={{
+        textAlign: "center",
+        padding: "var(--space-xl) 0",
+        marginTop: "var(--space-lg)",
+        borderTop: "1px solid var(--glass-border)",
+        fontSize: "var(--text-xs)",
+        color: "var(--muted-hex)",
+        letterSpacing: "0.5px",
+      }}>
+        Mission Control · Feed · {(items ?? []).length} items
+      </div>
     </div>
   );
 }
