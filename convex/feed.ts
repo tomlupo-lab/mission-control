@@ -24,9 +24,10 @@ export const list = query({
     }
 
     if (args.category) {
+      const cat = args.category;
       return await ctx.db
         .query("feedItems")
-        .withIndex("by_category", (q) => q.eq("category", args.category))
+        .withIndex("by_category", (q) => q.eq("category", cat))
         .order("desc")
         .take(limit);
     }
