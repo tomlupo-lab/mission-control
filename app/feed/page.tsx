@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ExternalLink, Pin, Filter, CheckCheck, Bell } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 
@@ -209,6 +209,40 @@ export default function FeedPage() {
   const pinned = (items ?? []).filter((i) => i.pinned);
   const unpinned = (items ?? []).filter((i) => !i.pinned);
 
+  // Group unpinned by day
+  const grouped = useMemo(() => {
+    const groups: { label: string; items: typeof unpinned }[] = [];
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+    let currentLabel = "";
+    let currentGroup: typeof unpinned = [];
+
+    for (const item of unpinned) {
+      const dateStr = new Date(item.createdAt).toISOString().slice(0, 10);
+      let label: string;
+      if (dateStr === todayStr) label = "Today";
+      else if (dateStr === yesterdayStr) label = "Yesterday";
+      else {
+        const d = new Date(item.createdAt);
+        label = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+      }
+
+      if (label !== currentLabel) {
+        if (currentGroup.length > 0) groups.push({ label: currentLabel, items: currentGroup });
+        currentLabel = label;
+        currentGroup = [item];
+      } else {
+        currentGroup.push(item);
+      }
+    }
+    if (currentGroup.length > 0) groups.push({ label: currentLabel, items: currentGroup });
+    return groups;
+  }, [unpinned]);
+
   return (
     <div style={{ maxWidth: 680, margin: "0 auto" }}>
       {/* Header */}
@@ -368,27 +402,32 @@ export default function FeedPage() {
         </div>
       )}
 
-      {/* Feed items */}
-      {unpinned.length > 0 ? (
+      {/* Feed items grouped by day */}
+      {grouped.length > 0 ? (
         <div>
-          <h3 style={{
-            fontSize: "var(--text-xs)",
-            fontWeight: 700,
-            color: "var(--muted-hex)",
-            textTransform: "uppercase",
-            letterSpacing: "2px",
-            marginBottom: "var(--space-md)",
-          }}>
-            Recent
-          </h3>
-          {unpinned.map((item, i) => (
-            <FeedItem
-              key={item._id}
-              item={item}
-              onMarkRead={(id) => markRead({ id })}
-              onTogglePin={(id) => togglePin({ id })}
-              delay={0.03 * (i + pinned.length)}
-            />
+          {grouped.map((group, gi) => (
+            <div key={group.label} style={{ marginBottom: "var(--space-xl)" }}>
+              <h3 style={{
+                fontSize: "var(--text-xs)",
+                fontWeight: 700,
+                color: group.label === "Today" ? "#10b981" : "var(--muted-hex)",
+                textTransform: "uppercase",
+                letterSpacing: "2px",
+                marginBottom: "var(--space-md)",
+                textShadow: group.label === "Today" ? "0 0 8px rgba(16,185,129,0.3)" : "none",
+              }}>
+                {group.label}
+              </h3>
+              {group.items.map((item, i) => (
+                <FeedItem
+                  key={item._id}
+                  item={item}
+                  onMarkRead={(id) => markRead({ id })}
+                  onTogglePin={(id) => togglePin({ id })}
+                  delay={0.03 * (gi * 3 + i)}
+                />
+              ))}
+            </div>
           ))}
         </div>
       ) : items !== undefined && pinned.length === 0 ? (
