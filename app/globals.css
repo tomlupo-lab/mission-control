@@ -41,9 +41,9 @@
   --border-hex: rgba(34, 48, 74, 0.6);
   --border-subtle: rgba(26, 36, 56, 0.5);
   --border-glow: rgba(16, 185, 129, 0.15);
-  --text: #edf2f7;
-  --text-secondary: #8b9dc3;
-  --muted-hex: #5a6b8a;
+  --text: #f0f4f8;
+  --text-secondary: #94a3b8;
+  --muted-hex: #6b7f99;
   --accent-hex: #10b981;
   --accent-glow: #34d399;
   --accent-dim: rgba(16, 185, 129, 0.10);
@@ -57,23 +57,23 @@
   --orange-dim: rgba(245, 158, 11, 0.10);
   --purple: #8b5cf6;
   --purple-dim: rgba(139, 92, 246, 0.10);
-  --cyan: #3b82f6;
-  --cyan-dim: rgba(59, 130, 246, 0.10);
+  --cyan: #06b6d4;
+  --cyan-dim: rgba(6, 182, 212, 0.10);
   --pink: #f472b6;
   --gradient: linear-gradient(135deg, #10b981 0%, #059669 50%, #8b5cf6 100%);
   --gradient-subtle: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%);
 
   /* Glass */
-  --glass-bg: rgba(10, 16, 28, 0.6);
-  --glass-border: rgba(34, 48, 74, 0.4);
+  --glass-bg: rgba(12, 18, 30, 0.65);
+  --glass-border: rgba(40, 56, 82, 0.45);
   --glass-blur: 16px;
 
   /* Domain accents */
-  --domain-trading: #10b981;
+  --domain-trading: #06b6d4;
   --domain-health: #10b981;
   --domain-meals: #f59e0b;
-  --domain-progress: #8b5cf6;
-  --domain-ops: #10b981;
+  --domain-progress: #a78bfa;
+  --domain-ops: #64748b;
   --domain-reports: #8b5cf6;
 
   /* Spacing scale */
@@ -322,7 +322,7 @@ body::after {
 .pill-red { background: var(--red-dim); border-color: rgba(239,68,68,0.25); color: var(--red); }
 .pill-orange { background: var(--orange-dim); border-color: rgba(245,158,11,0.25); color: var(--orange); }
 .pill-purple { background: var(--purple-dim); border-color: rgba(139,92,246,0.25); color: var(--purple); }
-.pill-cyan { background: var(--cyan-dim); border-color: rgba(59,130,246,0.25); color: var(--cyan); }
+.pill-cyan { background: var(--cyan-dim); border-color: rgba(6,182,212,0.25); color: var(--cyan); }
 .pill-accent { background: var(--accent-dim); border-color: rgba(16,185,129,0.25); color: var(--accent-hex); }
 .pill-muted { background: rgba(90,107,138,0.08); border-color: rgba(90,107,138,0.2); color: var(--muted-hex); }
 
