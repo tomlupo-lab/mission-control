@@ -193,6 +193,20 @@ export default defineSchema({
     .index("by_date", ["date"])
     .index("by_domain_date", ["domain", "date"]),
 
+  dailyBriefs: defineTable({
+    date: v.string(),
+    domain: v.string(),
+    metrics: v.optional(v.any()),
+    planToday: v.optional(v.any()),
+    actual: v.optional(v.any()),
+    delta: v.optional(v.any()),
+    adjustment: v.optional(v.any()),
+    alert: v.optional(v.string()),
+    updatedAt: v.number(),
+  })
+    .index("by_date", ["date"])
+    .index("by_domain_date", ["domain", "date"]),
+
   feedItems: defineTable({
     source: v.string(),
     category: v.string(),

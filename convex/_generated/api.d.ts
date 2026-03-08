@@ -10,6 +10,7 @@
 
 import type * as activities from "../activities.js";
 import type * as agents from "../agents.js";
+import type * as briefs from "../briefs.js";
 import type * as cron from "../cron.js";
 import type * as feed from "../feed.js";
 import type * as health from "../health.js";
@@ -30,6 +31,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   activities: typeof activities;
   agents: typeof agents;
+  briefs: typeof briefs;
   cron: typeof cron;
   feed: typeof feed;
   health: typeof health;

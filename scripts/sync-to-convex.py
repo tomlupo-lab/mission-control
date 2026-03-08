@@ -13,8 +13,8 @@ CONVEX_URL = os.environ.get(
 )
 API_BRIDGE_URL = os.environ.get("API_BRIDGE_URL", "http://api-bridge:8080")
 API_BRIDGE_TOKEN = os.environ.get("API_BRIDGE_TOKEN", "")
-WORKSPACE = os.path.expanduser("~/.openclaw/workspace")
-REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+WORKSPACE = os.path.join(REPO_DIR, ".openclaw", "workspace")
 STATE_PATH = os.path.join(WORKSPACE, "data", "mc_sync_state.json")
 
 
@@ -1150,6 +1150,86 @@ def sync_chef_daily_brief(state: dict):
     )
 
 
+def sync_daily_briefs(state: dict):
+    """Sync all daily briefs (coach + chef) to Convex dailyBriefs table."""
+    import sqlite3
+
+    print("📋 Syncing daily briefs...")
+    db_path = f"{WORKSPACE}/data/quark.db"
+    if not os.path.exists(db_path):
+        print("  ⚠ quark.db not found")
+        return
+
+    db = sqlite3.connect(db_path)
+    db.row_factory = sqlite3.Row
+
+    exists = db.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='daily_briefs'"
+    ).fetchone()
+    if not exists:
+        db.close()
+        print("  ↩ daily_briefs table not found")
+        return
+
+    # Sync last 7 days of briefs for all domains
+    rows = db.execute(
+        "SELECT domain, date, metrics, plan_today, actual, delta, adjustment, alert "
+        "FROM daily_briefs ORDER BY date DESC LIMIT 14"
+    ).fetchall()
+    db.close()
+
+    if not rows:
+        print("  ↩ No daily briefs")
+        return
+
+    sig = _hash_obj(
+        "|".join(
+            f"{r['domain']}:{r['date']}:{r['metrics']}:{r['plan_today']}" for r in rows
+        )
+    )
+    if not _changed(state, "daily_briefs", sig):
+        print("  ↩ Daily briefs unchanged — skipping")
+        return
+
+    count = 0
+    for row in rows:
+
+        def _parse(val):
+            if not val:
+                return None
+            try:
+                return json.loads(val)
+            except (json.JSONDecodeError, TypeError):
+                return val if isinstance(val, str) else None
+
+        args = {
+            "date": row["date"],
+            "domain": row["domain"],
+        }
+        metrics = _parse(row["metrics"])
+        if metrics:
+            args["metrics"] = metrics
+        plan = _parse(row["plan_today"])
+        if plan:
+            args["planToday"] = plan
+        actual = _parse(row["actual"])
+        if actual:
+            args["actual"] = actual
+        delta = _parse(row["delta"])
+        if delta:
+            args["delta"] = delta
+        adjustment = _parse(row["adjustment"])
+        if adjustment:
+            args["adjustment"] = adjustment
+        if row["alert"]:
+            args["alert"] = row["alert"]
+
+        convex_mutation("briefs:upsertDailyBrief", args)
+        count += 1
+
+    print(f"  ✓ Synced {count} daily briefs")
+
+
 def sync_cron(state: dict):
     """Sync cron job statuses from jobs.json (source of truth)."""
     print("⏰ Syncing cron jobs...")
@@ -1286,7 +1366,11 @@ def sync_activities(state: dict):
     count = 0
     for act in data:
         name = act.get("activityName", "")
-        atype = act.get("activityType", {}).get("typeKey", "unknown") if isinstance(act.get("activityType"), dict) else str(act.get("activityType", "unknown"))
+        atype = (
+            act.get("activityType", {}).get("typeKey", "unknown")
+            if isinstance(act.get("activityType"), dict)
+            else str(act.get("activityType", "unknown"))
+        )
         start = act.get("startTimeLocal", "")
         date = start[:10] if start else ""
         if not date:
@@ -1298,7 +1382,9 @@ def sync_activities(state: dict):
             "name": name or atype,
             "duration": round(duration_secs / 60) if duration_secs else None,
             "calories": act.get("calories"),
-            "distance": round((act.get("distance", 0) or 0) / 1000, 2) if act.get("distance") else None,
+            "distance": round((act.get("distance", 0) or 0) / 1000, 2)
+            if act.get("distance")
+            else None,
             "source": "garmin",
         }
         args = {k: v for k, v in args.items() if v is not None}
@@ -1311,7 +1397,7 @@ def main():
     parser = argparse.ArgumentParser(description="Sync data to Convex.")
     parser.add_argument(
         "--only",
-        help="Comma-separated list: health,tes,weed,trading,meal_log,meal_plan,chef_brief,cron,weekly",
+        help="Comma-separated list: health,tes,weed,trading,meal_log,meal_plan,chef_brief,cron,briefs,weekly",
     )
     args = parser.parse_args()
 
@@ -1347,6 +1433,8 @@ def main():
         sync_trade_log(state)
     if not selected or "activities" in selected:
         sync_activities(state)
+    if not selected or "briefs" in selected:
+        sync_daily_briefs(state)
     if not selected or "weekly" in selected:
         sync_weekly_reports(state)
 

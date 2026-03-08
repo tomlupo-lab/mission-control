@@ -113,6 +113,68 @@ function TodayMealsSummary({ mealLog }: { mealLog: any[] }) {
   );
 }
 
+function CoachBriefCard({ brief }: { brief: any }) {
+  if (!brief?.metrics) return null;
+  const m = brief.metrics;
+  const adj = brief.adjustment;
+  const adjReason = typeof adj === "object" ? adj?.reason || adj?.description : typeof adj === "string" ? adj : null;
+  const plan = brief.planToday;
+  const workout = typeof plan === "object" ? (plan?.type || plan?.workout || plan?.title) : typeof plan === "string" ? plan : null;
+
+  return (
+    <Card className="animate-in" style={{ marginBottom: "var(--space-lg)", animationDelay: "0.12s" }}>
+      <CardContent style={{ padding: "var(--space-xl)" }}>
+        <h2 style={{ margin: 0, marginBottom: "var(--space-md)", fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--muted-hex)", textTransform: "uppercase", letterSpacing: "1.5px" }}>🏋️ Coach Brief</h2>
+        <div style={{ display: "flex", gap: "var(--space-lg)", flexWrap: "wrap", marginBottom: "var(--space-sm)" }}>
+          {m.hrv != null && (
+            <div>
+              <span className="label" style={{ marginRight: 4 }}>HRV</span>
+              <span className="mono" style={{ color: m.hrv >= 60 ? "var(--green)" : "var(--orange)", fontSize: "var(--text-sm)" }}>{m.hrv}</span>
+            </div>
+          )}
+          {m.sleep_score != null && (
+            <div>
+              <span className="label" style={{ marginRight: 4 }}>Sleep</span>
+              <span className="mono" style={{ color: m.sleep_score >= 70 ? "var(--green)" : "var(--orange)", fontSize: "var(--text-sm)" }}>{m.sleep_score}</span>
+            </div>
+          )}
+          {m.readiness != null && (
+            <div>
+              <span className="label" style={{ marginRight: 4 }}>Ready</span>
+              <span className="mono" style={{ color: m.readiness >= 60 ? "var(--green)" : "var(--orange)", fontSize: "var(--text-sm)" }}>{m.readiness}</span>
+            </div>
+          )}
+          {m.tsb != null && (
+            <div>
+              <span className="label" style={{ marginRight: 4 }}>TSB</span>
+              <span className="mono" style={{ color: m.tsb >= -10 ? "var(--green)" : "var(--red)", fontSize: "var(--text-sm)" }}>{typeof m.tsb === "number" ? m.tsb.toFixed(1) : m.tsb}</span>
+            </div>
+          )}
+          {m.resting_hr != null && (
+            <div>
+              <span className="label" style={{ marginRight: 4 }}>RHR</span>
+              <span className="mono" style={{ fontSize: "var(--text-sm)" }}>{m.resting_hr}</span>
+            </div>
+          )}
+        </div>
+        {workout && (
+          <div className="meta" style={{ marginTop: "var(--space-xs)" }}>
+            Today: {typeof workout === "string" ? workout : JSON.stringify(workout)}
+          </div>
+        )}
+        {adjReason && (
+          <div style={{ marginTop: "var(--space-xs)", fontSize: "var(--text-xs)", color: "var(--orange)" }}>
+            ⚡ {adjReason}
+          </div>
+        )}
+        {brief.alert && (
+          <Badge variant="destructive" style={{ marginTop: "var(--space-xs)" }}>{brief.alert}</Badge>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function PortfolioSummary({ strategies }: { strategies: any[] }) {
   const live = strategies.filter((s) => s.mode === "live");
   if (live.length === 0) return null;
@@ -167,12 +229,14 @@ function ZioloCard({ ziolo }: { ziolo: any }) {
 }
 
 export default function DashboardPage() {
+  const todayDateStr = new Date().toISOString().slice(0, 10);
   const health = useQuery(api.health.getLatestHealth);
   const strategies = useQuery(api.trading.getStrategies);
   const mealPlan = useQuery(api.meals.getLatestMealPlan);
   const mealLog = useQuery(api.meals.getMealLog, { days: 7 });
   const ziolo = useQuery(api.ziolo.getZiolo);
   const tes = useQuery(api.tes.getTes);
+  const coachBrief = useQuery(api.briefs.getBriefByDomain, { domain: "coach", date: todayDateStr });
 
   const live = (strategies ?? []).filter((s) => s.mode === "live");
   const totalEquity = live.reduce((s, st) => s + (st.equity ?? 0), 0);
@@ -221,6 +285,7 @@ export default function DashboardPage() {
           <ActivityFeed />
         </div>
         <div className="dashboard-right">
+          <CoachBriefCard brief={coachBrief} />
           <TodayMealsSummary mealLog={mealLog ?? []} />
           <PortfolioSummary strategies={strategies ?? []} />
           <ZioloCard ziolo={ziolo} />
